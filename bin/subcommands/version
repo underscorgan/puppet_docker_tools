@@ -1,0 +1,6 @@
+#!/usr/bin/env ruby
+load File.expand_path(File.join(File.dirname(__FILE__), "..", "..", "lib", "puppet_docker_tools.rb"))
+require 'puppet_docker_tools/utilities'
+
+directory = ARGV[0] || '.'
+puts PuppetDockerTools::Utilities::Dockerfile.get_value_from_env('version', directory: directory)
