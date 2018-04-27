@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 
+command_path=${0%/puppet-docker}
 command=$1
 shift
 arguments=''
 for arg in "$@"; do arguments="$arguments $arg"; done
 
-./subcommands/$command $arguments
+$command_path/subcommands/$command $arguments
