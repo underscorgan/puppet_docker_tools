@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+command=$1
+shift
+arguments=''
+for arg in "$@"; do arguments="$arguments $arg"; done
+
+./subcommands/$command $arguments
