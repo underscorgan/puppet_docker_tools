@@ -1,0 +1,14 @@
+#!/usr/bin/env ruby
+
+require 'docker'
+
+platforms=ARGV
+
+if platforms.empty?
+  platforms = ['ubuntu:16.04', 'centos:7', 'alpine:3.4', 'debian:9', 'postgres:9.6.8']
+end
+
+platforms.each do |platform|
+  image = Docker::Image.create('fromImage' => platform)
+  puts "Pulled #{image.info["RepoTags"].first}, last updated #{image.info["Created"]}"
+end
