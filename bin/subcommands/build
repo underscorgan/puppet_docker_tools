@@ -1,0 +1,27 @@
+#!/usr/bin/env ruby
+load File.expand_path(File.join(File.dirname(__FILE__), "..", "..", "lib", "puppet_docker_tools.rb"))
+require 'puppet_docker_tools/utilities'
+require 'docker'
+
+directory = ARGV[0] || '.'
+if directory == '.'
+  image_name = File.basename(Dir.pwd)
+else
+  image_name = File.basename(directory)
+end
+version = PuppetDockerTools::Utilities::Dockerfile.get_value_from_env('version', directory: directory)
+path = "#{PuppetDockerTools::REPOSITORY}/#{image_name}"
+
+puts "Building #{path}:latest"
+build_options = { 't' => "#{path}:latest" }
+if PuppetDockerTools::NO_CACHE
+  puts "Ignoring cache for #{path}"
+  build_options['nocache'] = true
+end
+Docker::Image.build_from_dir(directory, build_options)
+
+if version
+  puts "Building #{path}:#{version}"
+  build_options = { 't' => "#{path}:#{version}" }
+  Docker::Image.build_from_dir(directory, build_options)
+end
