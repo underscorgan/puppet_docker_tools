@@ -12,7 +12,7 @@ class PuppetDockerTools
 
       def get_value_from_base_image(label, directory: '.', dockerfile: '')
         base_image = get_value_from_dockerfile('from', directory: directory, dockerfile: dockerfile).split(':').first.split('/').last
-        get_value_from_env(label, directory: base_image)
+        get_value_from_env(label, directory: "#{directory}/../#{base_image}")
       end
 
       def get_value_from_variable(variable, directory: '.', dockerfile: '')
