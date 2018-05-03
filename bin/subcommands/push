@@ -1,0 +1,31 @@
+#!/usr/bin/env ruby
+load File.expand_path(File.join(File.dirname(__FILE__), "..", "..", "lib", "puppet_docker_tools.rb"))
+require 'puppet_docker_tools/utilities'
+require 'docker'
+
+directory = ARGV[0] || '.'
+ARGV.shift
+
+if directory == '.'
+  image_name = File.basename(Dir.pwd)
+else
+  image_name = File.basename(directory)
+end
+
+puts "Setting up authentication"
+PuppetDockerTools::Utilities.authenticate
+
+path = "#{PuppetDockerTools::REPOSITORY}/#{image_name}"
+
+version = PuppetDockerTools::Utilities.get_value_from_label(image_name, 'version')
+
+unless version
+  fail "No version specified in Dockerfile for #{path}"
+end
+
+image = Docker::Image.get(path)
+puts "Pushing #{path}:#{version} to Docker Hub"
+image.push(nil, repo_tag: "#{path}:#{version}")
+
+puts "Pushing #{path}:latest to Docker Hub"
+image.push(nil, repo_tag: "#{path}:latest")
