@@ -2,6 +2,7 @@
 
 require 'docker'
 require 'date'
+require 'time'
 
 platforms=ARGV
 
@@ -12,8 +13,8 @@ end
 platforms.each do |platform|
   image = Docker::Image.create('fromImage' => platform)
   timestamp = image.info["Created"]
-  if timestamp =~ /^\d+$/
-    timestamp = Time.at(image.info["Created"])
+  if "#{timestamp}" =~ /^\d+$/
+    timestamp = Time.at(image.info["Created"]).utc.iso8601
   end
   puts "Pulled #{image.info["RepoTags"].first}, last updated #{timestamp}"
 end

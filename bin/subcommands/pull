@@ -2,6 +2,7 @@
 load File.expand_path(File.join(File.dirname(__FILE__), "..", "..", "lib", "puppet_docker_tools.rb"))
 require 'docker'
 require 'date'
+require 'time'
 
 image = ARGV[0] || "#{PuppetDockerTools::REPOSITORY}/#{File.basename(Dir.pwd)}"
 
@@ -16,8 +17,8 @@ Docker::Image.create('fromImage' => image)
 images = Docker::Image.all('filter' => image)
 images.each do |img|
   timestamp = img.info["Created"]
-  if timestamp =~ /^\d+$/
-    timestamp = Time.at(img.info["Created"])
+  if "#{timestamp}" =~ /^\d+$/
+    timestamp = Time.at(img.info["Created"]).utc.iso8601
   end
 
   puts "Pulled #{img.info["RepoTags"].join(', ')}, last updated #{timestamp}"
