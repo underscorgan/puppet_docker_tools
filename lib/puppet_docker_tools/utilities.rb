@@ -29,5 +29,11 @@ class PuppetDockerTools
     rescue
       nil
     end
+
+    def current_git_sha(directory = '.')
+      Dir.chdir directory do
+        `git rev-parse HEAD`.strip
+      end
+    end
   end
 end

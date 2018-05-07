@@ -1,0 +1,27 @@
+#!/usr/bin/env ruby
+
+load File.expand_path(File.join(File.dirname(__FILE__), "..", "..", "lib", "puppet_docker_tools.rb"))
+require 'date'
+require 'time'
+require 'puppet_docker_tools/utilities'
+
+directory = ARGV[0] || '.'
+dockerfile = File.join(directory, 'Dockerfile')
+
+unless File.exist? dockerfile
+  fail "File #{dockerfile} doesn't exist. You can pass the directory containing the dockerfile in at the command line."
+end
+
+values_to_update = {
+  "#{PuppetDockerTools::NAMESPACE}.vcs-ref" => PuppetDockerTools::Utilities.current_git_sha(directory),
+  "#{PuppetDockerTools::NAMESPACE}.build-date" => Time.now.utc.iso8601
+}
+
+text = File.read(dockerfile)
+values_to_update.each do |key, value|
+  original = text.clone
+  text = text.gsub(/#{key}=\"[a-z0-9A-Z\-:]*\"/, "#{key}=\"#{value}\"")
+  puts "Updating #{key} in #{dockerfile}" unless original == text
+end
+
+File.open(dockerfile, 'w') { |file| file.puts text }
