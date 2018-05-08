@@ -9,7 +9,7 @@ if directory == '.'
 else
   image_name = File.basename(directory)
 end
-version = PuppetDockerTools::Utilities::Dockerfile.get_value_from_env('version', directory: directory)
+version = PuppetDockerTools::Utilities.get_value_from_env('version', directory: directory)
 path = "#{PuppetDockerTools::REPOSITORY}/#{image_name}"
 
 puts "Building #{path}:latest"
