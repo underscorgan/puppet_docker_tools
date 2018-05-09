@@ -1,9 +1,79 @@
-#!/usr/bin/env bash
+#!/usr/bin/env ruby
+require 'docopt'
+require File.expand_path(File.join(File.dirname(__FILE__), "..", "lib", 'puppet_docker_tools.rb'))
+require 'puppet_docker_tools/run'
 
-command_path=${0%/puppet-docker}
-command=$1
-shift
-arguments=''
-for arg in "$@"; do arguments="$arguments $arg"; done
+doc = <<DOC
+Utilities for building and releasing Puppet docker images.
 
-$command_path/subcommands/$command $arguments
+Usage:
+  puppet-docker build [DIRECTORY] [--repository=<repo>] [--no-cache]
+  puppet-docker lint [DIRECTORY]
+  puppet-docker pull [IMAGE] [--repository=<repo>]
+  puppet-docker push [DIRECTORY] [--repository=<repo>] [--namespace=<namespace>]
+  puppet-docker rev-labels [DIRECTORY] [--namespace=<namespace>]
+  puppet-docker spec [DIRECTORY]
+  puppet-docker test [DIRECTORY]
+  puppet-docker version [DIRECTORY]
+  puppet-docker update-base-images [TAG]...
+  puppet-docker help
+
+Arguments:
+  DIRECTORY  Directory containing the Dockerfile for the image you're operating on. Defaults to $PWD
+  IMAGE      The docker image to operate on, including namespace. Defaults to '<repo>/#{File.basename(Dir.pwd)}'
+  TAG        Pull latest versions of images at TAG. Defaults to ['ubuntu:16.04', 'centos:7', 'alpine:3.4', 'debian:9', 'postgres:9.6.8']
+
+Options:
+  --repository=<repo>      Dockerhub repository containing the image [default: puppet]
+  --no-cache               Whether or not to use existing cache when building images [default: false]
+  --namespace=<namespace>  Namespace for labels on the container [default: org.label-schema]
+DOC
+
+begin
+  options = Docopt::docopt(doc)
+rescue Docopt::Exit
+  puts doc
+  exit
+end
+
+defaults = {
+  'DIRECTORY'    => Dir.pwd,
+  'TAG'          => ['ubuntu:16.04', 'centos:7', 'alpine:3.4', 'debian:9', 'postgres:9.6.8'],
+  '--namespace'  => 'org.label-schema',
+  '--repository' => 'puppet',
+}
+
+options.merge!(defaults) do |key, option, default|
+  if option.nil? || Array(option).empty?
+    default
+  else
+    option
+  end
+end
+
+if options['IMAGE'].nil?
+  options['IMAGE'] = "#{options['--repository']}/#{File.basename(options['DIRECTORY'])}"
+end
+
+if options['build']
+  PuppetDockerTools::Run.build(options['DIRECTORY'], repository: options['--repository'], no_cache: options['--no-cache'])
+elsif options['lint']
+  PuppetDockerTools::Run.lint(options['DIRECTORY'])
+elsif options['pull']
+  PuppetDockerTools::Run.pull(options['IMAGE'])
+elsif options['push']
+  PuppetDockerTools::Run.push(options['DIRECTORY'], repository: options['--repository'], namespace: options['--namespace'])
+elsif options['rev-labels']
+  PuppetDockerTools::Run.rev_labels(options['DIRECTORY'], namespace: options['--namespace'])
+elsif options['spec']
+  PuppetDockerTools::Run.spec(options['DIRECTORY'])
+elsif options['test']
+  PuppetDockerTools::Run.lint(options['DIRECTORY'])
+  PuppetDockerTools::Run.spec(options['DIRECTORY'])
+elsif options['update-base-images']
+  PuppetDockerTools::Run.update_base_images(options['TAG'])
+elsif options['version']
+  PuppetDockerTools::Run.version(options['DIRECTORY'])
+elsif options['help']
+  puts doc
+end

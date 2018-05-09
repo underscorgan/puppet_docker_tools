@@ -5,4 +5,4 @@ require 'docker'
 Docker.options[:read_timeout] = 7200
 
 # Load any shared examples or context helpers
-Dir['./spec/support/**/*.rb'].sort.each { |f| require f }
+Dir[File.join(File.dirname(__FILE__), 'support', '**', '*.rb')].sort.each { |f| require f }
