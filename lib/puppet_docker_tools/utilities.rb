@@ -8,14 +8,14 @@ class PuppetDockerTools
       puts "Authentication for hub.docker.com"
       print "Username: "
       STDOUT.flush
-      username = gets.chomp
+      username = STDIN.gets.chomp
       print "Password: "
       STDOUT.flush
       password = STDIN.noecho(&:gets).chomp
       puts
       print "Email: "
       STDOUT.flush
-      email = gets.chomp
+      email = STDIN.gets.chomp
 
       puts "going to auth to hub.docker.com as #{username} with #{email}"
 
