@@ -7,17 +7,20 @@ class PuppetDockerTools
     # Authenticate with hub.docker.com
     def authenticate
       puts "Authentication for hub.docker.com"
-      print "Email: "
+      print "Username: "
       STDOUT.flush
-      email = STDIN.gets.chomp
+      username = STDIN.gets.chomp
       print "Password: "
       STDOUT.flush
       password = STDIN.noecho(&:gets).chomp
       puts
+      print "Email: "
+      STDOUT.flush
+      email = STDIN.gets.chomp
 
-      puts "going to auth to hub.docker.com as #{email}"
+      puts "going to auth to hub.docker.com as #{username} with #{email}"
 
-      Docker.authenticate!('email' => email, 'password' => password)
+      Docker.authenticate!('username' => username, 'password' => password, 'email' => email)
     end
 
     # Get a value from the labels on a docker image
