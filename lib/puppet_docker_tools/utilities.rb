@@ -50,13 +50,13 @@ class PuppetDockerTools
       dockerfile[/#{variable}=(["a-zA-Z0-9\.]+)/, 1]
     end
 
-    def get_value_from_env(label, directory: '.')
+    def get_value_from_env(label, namespace: '', directory: '.')
       text = File.read("#{directory}/Dockerfile")
-      value = text.scan(/org\.label-schema\.(.+)=(.+) \\?/).to_h[label]
+      value = text.scan(/#{Regexp.escape(namespace)}\.(.+)=(.+) \\?/).to_h[label]
       # expand out environment variables
       value = get_value_from_variable(value, directory: directory, dockerfile: text) if value.start_with?('$')
       # check in higher-level image if we didn't find it defined in this docker file
-      value = get_value_from_base_image(label, directory: directory) if value.nil?
+      value = get_value_from_base_image(label, namespace: namespace, directory: directory) if value.nil?
       value.gsub(/\A"|"\Z/, '')
     end
 

@@ -9,10 +9,10 @@ class PuppetDockerTools
   module Run
     module_function
 
-    def build(directory, repository: , no_cache: false)
+    def build(directory, repository: , namespace: ,no_cache: false)
       image_name = File.basename(directory)
 
-      version = PuppetDockerTools::Utilities.get_value_from_env('version', directory: directory)
+      version = PuppetDockerTools::Utilities.get_value_from_env('version', namespace: namespace, directory: directory)
       path = "#{repository}/#{image_name}"
       puts "Building #{path}:latest"
       build_options = { 't' => "#{path}:latest" }
@@ -124,8 +124,8 @@ class PuppetDockerTools
       end
     end
 
-    def version(directory)
-      puts PuppetDockerTools::Utilities.get_value_from_env('version', directory: directory)
+    def version(directory, namespace: )
+      puts PuppetDockerTools::Utilities.get_value_from_env('version', namespace: namespace, directory: directory)
     end
   end
 end

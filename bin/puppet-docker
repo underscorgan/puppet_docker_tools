@@ -7,14 +7,14 @@ doc = <<DOC
 Utilities for building and releasing Puppet docker images.
 
 Usage:
-  puppet-docker build [DIRECTORY] [--repository=<repo>] [--no-cache]
+  puppet-docker build [DIRECTORY] [--repository=<repo>] [--namespace=<namespace>] [--no-cache]
   puppet-docker lint [DIRECTORY]
   puppet-docker pull [IMAGE] [--repository=<repo>]
   puppet-docker push [DIRECTORY] [--repository=<repo>] [--namespace=<namespace>]
   puppet-docker rev-labels [DIRECTORY] [--namespace=<namespace>]
   puppet-docker spec [DIRECTORY]
   puppet-docker test [DIRECTORY]
-  puppet-docker version [DIRECTORY]
+  puppet-docker version [DIRECTORY] [--namespace=<namespace>]
   puppet-docker update-base-images [TAG]...
   puppet-docker help
 
@@ -56,7 +56,7 @@ if options['IMAGE'].nil?
 end
 
 if options['build']
-  PuppetDockerTools::Run.build(options['DIRECTORY'], repository: options['--repository'], no_cache: options['--no-cache'])
+  PuppetDockerTools::Run.build(options['DIRECTORY'], repository: options['--repository'], namespace: options['--namespace'], no_cache: options['--no-cache'])
 elsif options['lint']
   PuppetDockerTools::Run.lint(options['DIRECTORY'])
 elsif options['pull']
@@ -73,7 +73,7 @@ elsif options['test']
 elsif options['update-base-images']
   PuppetDockerTools::Run.update_base_images(options['TAG'])
 elsif options['version']
-  PuppetDockerTools::Run.version(options['DIRECTORY'])
+  PuppetDockerTools::Run.version(options['DIRECTORY'], namespace: options['--namespace'])
 elsif options['help']
   puts doc
 end
