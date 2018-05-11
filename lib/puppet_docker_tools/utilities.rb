@@ -51,6 +51,7 @@ class PuppetDockerTools
       value = get_value_from_variable(value, directory: directory, dockerfile: text) if value.start_with?('$')
       # check in higher-level image if we didn't find it defined in this docker file
       value = get_value_from_base_image(label, namespace: namespace, directory: directory) if value.nil?
+      # This gets rid of leading or trailing quotes
       value.gsub(/\A"|"\Z/, '')
     end
 
