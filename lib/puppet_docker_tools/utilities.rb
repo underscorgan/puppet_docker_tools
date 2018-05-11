@@ -82,7 +82,9 @@ class PuppetDockerTools
     # @param dockerfile A string containing the contents of the Dockerfile [optional]
     def get_value_from_dockerfile(key, directory: '.', dockerfile: '')
       if dockerfile.empty?
-        dockerfile = File.read("#{directory}/Dockerfile")
+        file = "#{directory}/Dockerfile"
+        fail "File #{file} doesn't exist!" unless File.exist? file
+        dockerfile = File.read("#{file}")
       end
       dockerfile[/^#{key.upcase} (.*$)/, 1]
     end
@@ -107,7 +109,9 @@ class PuppetDockerTools
     # # @param dockerfile A string containing the contents of the Dockerfile [optional]
     def get_value_from_variable(variable, directory: '.', dockerfile: '')
       if dockerfile.empty?
-        dockerfile = File.read("#{directory}/Dockerfile")
+        file = "#{directory}/Dockerfile"
+        fail "File #{file} doesn't exist!" unless File.exist? file
+        dockerfile = File.read("#{file}")
       end
       # get rid of the leading $ for the variable
       variable[0] = ''
