@@ -41,8 +41,8 @@ class PuppetDockerTools
     # Get a value from a Dockerfile. Extrapolates variables and variables set in
     # the base docker image
     #
-    # @param label The label containing the value you want to retrieve
-    # @param namespace The namespace for the label
+    # @param label The label containing the value you want to retrieve, e.g. 'version'
+    # @param namespace The namespace for the label, e.g. 'org.label-schema'
     # @directory The directory containing the Dockerfile, defaults to $PWD
     def get_value_from_env(label, namespace: '', directory: '.')
       text = File.read("#{directory}/Dockerfile")
@@ -55,7 +55,7 @@ class PuppetDockerTools
       value.gsub(/\A"|"\Z/, '')
     end
 
-    # Get the current git sha for the specified directory, using `git rev-parse HEAD`
+    # Get the current git sha for the specified directory
     #
     # @param directory
     def current_git_sha(directory = '.')
@@ -68,7 +68,7 @@ class PuppetDockerTools
     # given timestamp is entirely numeric it will be converted to an ISO 8601
     # timestamp, if not the parameter will be returned as passed.
     #
-    # @param timestamp The timestamp to convert.
+    # @param timestamp The timestamp to convert
     def format_timestamp(timestamp)
       if "#{timestamp}" =~ /^\d+$/
         timestamp = Time.at(timestamp).utc.iso8601
@@ -79,7 +79,7 @@ class PuppetDockerTools
     # Get a value from a Dockerfile
     #
     # @param key The key to read from the Dockerfile, e.g. 'from'
-    # @param directory The directory containing the Dockerfile. Defaults to $PWD
+    # @param directory The directory containing the Dockerfile, defaults to $PWD
     # @param dockerfile A string containing the contents of the Dockerfile [optional]
     def get_value_from_dockerfile(key, directory: '.', dockerfile: '')
       if dockerfile.empty?
