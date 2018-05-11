@@ -25,7 +25,7 @@ Arguments:
 
 Options:
   --repository=<repo>      Dockerhub repository containing the image [default: puppet]
-  --no-cache               Whether or not to use existing cache when building images [default: false]
+  --no-cache               Disable use of layer cache when building this image. Defaults to using the cache.
   --namespace=<namespace>  Namespace for labels on the container [default: org.label-schema]
 DOC
 
