@@ -69,9 +69,6 @@ class PuppetDockerTools
     def push(directory, repository: , namespace: )
       image_name = File.basename(directory)
 
-      puts "Setting up authentication"
-      PuppetDockerTools::Utilities.authenticate
-
       path = "#{repository}/#{image_name}"
 
       version = PuppetDockerTools::Utilities.get_value_from_label(path, value: 'version', namespace: namespace)
@@ -80,13 +77,21 @@ class PuppetDockerTools
         fail "No version specified in Dockerfile for #{path}"
       end
 
-      image = Docker::Image.get(path)
       puts "Pushing #{path}:#{version} to Docker Hub"
-      image.push(nil, repo_tag: "#{path}:#{version}")
+      exitstatus, _ = PuppetDockerTools::Utilities.push_to_dockerhub("#{path}:#{version}")
+      unless exitstatus == 0
+        puts "Pushing to #{path}:#{version} to dockerhub failed!"
+        exit exitstatus
+      end
 
       puts "Pushing #{path}:latest to Docker Hub"
-      image.push(nil, repo_tag: "#{path}:latest")
+      exitstatus, _ = PuppetDockerTools::Utilities.push_to_dockerhub("#{path}:latest")
+      unless exitstatus == 0
+        puts "Pushing #{path}:latest to dockerhub failed!"
+        exit exitstatus
+      end
     end
+
 
     def rev_labels(directory, namespace: )
       dockerfile = File.join(directory, 'Dockerfile')

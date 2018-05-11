@@ -1,26 +1,29 @@
 require 'docker'
+require 'open3'
 
 class PuppetDockerTools
   module Utilities
     module_function
 
-    # Authenticate with hub.docker.com
-    def authenticate
-      puts "Authentication for hub.docker.com"
-      print "Username: "
-      STDOUT.flush
-      username = STDIN.gets.chomp
-      print "Password: "
-      STDOUT.flush
-      password = STDIN.noecho(&:gets).chomp
-      puts
-      print "Email: "
-      STDOUT.flush
-      email = STDIN.gets.chomp
-
-      puts "going to auth to hub.docker.com as #{username} with #{email}"
-
-      Docker.authenticate!('username' => username, 'password' => password, 'email' => email)
+    # Push an image to hub.docker.com
+    #
+    # @param image_name The image to push, including the tag e.g., puppet/puppetserver:latest
+    # @param stream_output Whether or not to stream output as it comes in, defaults to true
+    # @return Returns an array containing the integer exitstatus of the push
+    #         command and a string containing the combined stdout and stderr
+    #         from the push
+    def push_to_dockerhub(image_name, stream_output=true)
+      Open3.popen2e("docker push #{image_name}") do |stdin, output_stream, wait_thread|
+        output=''
+        while line = output_stream.gets
+          if stream_output
+            puts line
+          end
+          output += line
+        end
+        exit_status = wait_thread.value.exitstatus
+        return exit_status, output
+      end
     end
 
     # Get a value from the labels on a docker image
