@@ -30,13 +30,15 @@ class PuppetDockerTools
     end
 
     def lint(directory)
-      PuppetDockerTools::Run.pull('lukasmartinelli/hadolint:latest')
-      container = Docker::Container.create('Cmd' => ['/bin/sh', '-c', "hadolint --ignore DL3008 --ignore DL4000 --ignore DL4001 - "], 'Image' => 'lukasmartinelli/hadolint', 'OpenStdin' => true, 'StdinOnce' => true)
+      hadolint_container = 'lukasmartinelli/hadolint'
+      PuppetDockerTools::Run.pull("#{hadolint_container}:latest")
+      container = Docker::Container.create('Cmd' => ['/bin/sh', '-c', "hadolint --ignore DL3008 --ignore DL4000 --ignore DL4001 - "], 'Image' => hadolint_container, 'OpenStdin' => true, 'StdinOnce' => true)
       container.tap(&:start).attach(stdin: "#{directory}/Dockerfile")
       container.wait
       exit_status = container.json['State']['ExitCode']
       unless exit_status == 0
-        fail container.logs(stdout: true, stderr: true)
+        puts container.logs(stdout: true, stderr: true)
+        exit exit_status
       end
     end
 
