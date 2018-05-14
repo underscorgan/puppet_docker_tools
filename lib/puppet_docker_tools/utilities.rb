@@ -74,7 +74,7 @@ class PuppetDockerTools
     # @param timestamp The timestamp to convert
     def format_timestamp(timestamp)
       if "#{timestamp}" =~ /^\d+$/
-        timestamp = Time.at(timestamp).utc.iso8601
+        timestamp = Time.at(Integer(timestamp)).utc.iso8601
       end
       timestamp
     end
