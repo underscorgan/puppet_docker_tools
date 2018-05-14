@@ -54,8 +54,7 @@ class PuppetDockerTools
       container.wait
       exit_status = container.json['State']['ExitCode']
       unless exit_status == 0
-        puts container.logs(stdout: true, stderr: true)
-        exit exit_status
+        fail container.logs(stdout: true, stderr: true)
       end
     end
 
@@ -115,15 +114,13 @@ class PuppetDockerTools
       puts "Pushing #{path}:#{version} to Docker Hub"
       exitstatus, _ = PuppetDockerTools::Utilities.push_to_dockerhub("#{path}:#{version}")
       unless exitstatus == 0
-        puts "Pushing to #{path}:#{version} to dockerhub failed!"
-        exit exitstatus
+        fail "Pushing to #{path}:#{version} to dockerhub failed!"
       end
 
       puts "Pushing #{path}:latest to Docker Hub"
       exitstatus, _ = PuppetDockerTools::Utilities.push_to_dockerhub("#{path}:latest")
       unless exitstatus == 0
-        puts "Pushing #{path}:latest to dockerhub failed!"
-        exit exitstatus
+        fail "Pushing #{path}:latest to dockerhub failed!"
       end
     end
 

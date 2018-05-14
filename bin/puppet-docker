@@ -55,25 +55,30 @@ if options['IMAGE'].nil?
   options['IMAGE'] = "#{options['--repository']}/#{File.basename(options['DIRECTORY'])}"
 end
 
-if options['build']
-  PuppetDockerTools::Run.build(options['DIRECTORY'], repository: options['--repository'], namespace: options['--namespace'], no_cache: options['--no-cache'])
-elsif options['lint']
-  PuppetDockerTools::Run.lint(options['DIRECTORY'])
-elsif options['pull']
-  PuppetDockerTools::Run.pull(options['IMAGE'])
-elsif options['push']
-  PuppetDockerTools::Run.push(options['DIRECTORY'], repository: options['--repository'], namespace: options['--namespace'])
-elsif options['rev-labels']
-  PuppetDockerTools::Run.rev_labels(options['DIRECTORY'], namespace: options['--namespace'])
-elsif options['spec']
-  PuppetDockerTools::Run.spec(options['DIRECTORY'])
-elsif options['test']
-  PuppetDockerTools::Run.lint(options['DIRECTORY'])
-  PuppetDockerTools::Run.spec(options['DIRECTORY'])
-elsif options['update-base-images']
-  PuppetDockerTools::Run.update_base_images(options['TAG'])
-elsif options['version']
-  PuppetDockerTools::Run.version(options['DIRECTORY'], namespace: options['--namespace'])
-elsif options['help']
-  puts doc
+begin
+  if options['build']
+    PuppetDockerTools::Run.build(options['DIRECTORY'], repository: options['--repository'], namespace: options['--namespace'], no_cache: options['--no-cache'])
+  elsif options['lint']
+    PuppetDockerTools::Run.lint(options['DIRECTORY'])
+  elsif options['pull']
+    PuppetDockerTools::Run.pull(options['IMAGE'])
+  elsif options['push']
+    PuppetDockerTools::Run.push(options['DIRECTORY'], repository: options['--repository'], namespace: options['--namespace'])
+  elsif options['rev-labels']
+    PuppetDockerTools::Run.rev_labels(options['DIRECTORY'], namespace: options['--namespace'])
+  elsif options['spec']
+    PuppetDockerTools::Run.spec(options['DIRECTORY'])
+  elsif options['test']
+    PuppetDockerTools::Run.lint(options['DIRECTORY'])
+    PuppetDockerTools::Run.spec(options['DIRECTORY'])
+  elsif options['update-base-images']
+    PuppetDockerTools::Run.update_base_images(options['TAG'])
+  elsif options['version']
+    PuppetDockerTools::Run.version(options['DIRECTORY'], namespace: options['--namespace'])
+  elsif options['help']
+    puts doc
+  end
+rescue => e
+  puts "ERROR:\n\t#{e}"
+  exit 1
 end
