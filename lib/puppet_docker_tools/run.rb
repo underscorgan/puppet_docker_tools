@@ -114,7 +114,7 @@ class PuppetDockerTools
       puts "Pushing #{path}:#{version} to Docker Hub"
       exitstatus, _ = PuppetDockerTools::Utilities.push_to_dockerhub("#{path}:#{version}")
       unless exitstatus == 0
-        fail "Pushing to #{path}:#{version} to dockerhub failed!"
+        fail "Pushing #{path}:#{version} to dockerhub failed!"
       end
 
       puts "Pushing #{path}:latest to Docker Hub"
