@@ -7,14 +7,14 @@ doc = <<DOC
 Utilities for building and releasing Puppet docker images.
 
 Usage:
-  puppet-docker build [DIRECTORY] [--repository=<repo>] [--namespace=<namespace>] [--no-cache]
-  puppet-docker lint [DIRECTORY]
+  puppet-docker build [DIRECTORY] [--dockerfile=<dockerfile>] [--repository=<repo>] [--namespace=<namespace>] [--no-cache]
+  puppet-docker lint [DIRECTORY] [--dockerfile=<dockerfile>]
   puppet-docker pull [IMAGE] [--repository=<repo>]
-  puppet-docker push [DIRECTORY] [--repository=<repo>] [--namespace=<namespace>]
-  puppet-docker rev-labels [DIRECTORY] [--namespace=<namespace>]
+  puppet-docker push [DIRECTORY] [--dockerfile=<dockerfile>] [--repository=<repo>] [--namespace=<namespace>]
+  puppet-docker rev-labels [DIRECTORY] [--dockerfile=<dockerfile>] [--namespace=<namespace>]
   puppet-docker spec [DIRECTORY]
-  puppet-docker test [DIRECTORY]
-  puppet-docker version [DIRECTORY] [--namespace=<namespace>]
+  puppet-docker test [DIRECTORY] [--dockerfile=<dockerfile>]
+  puppet-docker version [DIRECTORY] [--dockerfile=<dockerfile>] [--namespace=<namespace>]
   puppet-docker update-base-images [TAG]...
   puppet-docker help
 
@@ -24,9 +24,10 @@ Arguments:
   TAG        Pull latest versions of images at TAG. Defaults to ['ubuntu:16.04', 'centos:7', 'alpine:3.4', 'debian:9', 'postgres:9.6.8']
 
 Options:
-  --repository=<repo>      Dockerhub repository containing the image [default: puppet]
-  --no-cache               Disable use of layer cache when building this image. Defaults to using the cache.
-  --namespace=<namespace>  Namespace for labels on the container [default: org.label-schema]
+  --repository=<repo>        Dockerhub repository containing the image [default: puppet]
+  --no-cache                 Disable use of layer cache when building this image. Defaults to using the cache.
+  --namespace=<namespace>    Namespace for labels on the container [default: org.label-schema]
+  --dockerfile=<dockerfile>  File name for your dockerfile [default: Dockerfile]
 DOC
 
 begin
@@ -41,6 +42,7 @@ defaults = {
   'TAG'          => ['ubuntu:16.04', 'centos:7', 'alpine:3.4', 'debian:9', 'postgres:9.6.8'],
   '--namespace'  => 'org.label-schema',
   '--repository' => 'puppet',
+  '--dockerfile' => 'Dockerfile',
 }
 
 options.merge!(defaults) do |key, option, default|
@@ -55,9 +57,9 @@ if options['IMAGE'].nil?
   options['IMAGE'] = "#{options['--repository']}/#{File.basename(options['DIRECTORY'])}"
 end
 
-command_runner = PuppetDockerTools::Runner.new(directory: options['DIRECTORY'], repository: options['--repository'], namespace: options['--namespace'])
-
 begin
+  command_runner = PuppetDockerTools::Runner.new(directory: options['DIRECTORY'], repository: options['--repository'], namespace: options['--namespace'], dockerfile: options['--dockerfile'])
+
   if options['build']
     command_runner.build(no_cache: options['--no-cache'])
   elsif options['lint']

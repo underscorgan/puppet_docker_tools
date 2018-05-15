@@ -7,12 +7,16 @@ require File.expand_path(File.join(File.dirname(__FILE__), "..", "..", "spec", '
 
 class PuppetDockerTools
   class Runner
-    attr_accessor :directory, :repository, :namespace
+    attr_accessor :directory, :repository, :namespace, :dockerfile
 
-    def initialize(directory: , repository: , namespace: )
+    def initialize(directory: , repository: , namespace: , dockerfile: )
       @directory = directory
       @repository = repository
       @namespace = namespace
+      @dockerfile = dockerfile
+
+      file = "#{directory}/#{dockerfile}"
+      fail "File #{file} doesn't exist!" unless File.exist? file
     end
 
     # Build a docker image from a directory
@@ -21,12 +25,12 @@ class PuppetDockerTools
     #        this image. Defaults to using the cache (no_cache = false).
     def build(no_cache: false)
       image_name = File.basename(directory)
-      version = PuppetDockerTools::Utilities.get_value_from_env('version', namespace: namespace, directory: directory)
+      version = PuppetDockerTools::Utilities.get_value_from_env('version', namespace: namespace, directory: directory, dockerfile: dockerfile)
       path = "#{repository}/#{image_name}"
       puts "Building #{path}:latest"
 
       # 't' in the build_options sets the tag for the image we're building
-      build_options = { 't' => "#{path}:latest" }
+      build_options = { 't' => "#{path}:latest", 'dockerfile' => dockerfile }
       if no_cache
         puts "Ignoring cache for #{path}"
         build_options['nocache'] = true
@@ -37,7 +41,7 @@ class PuppetDockerTools
         puts "Building #{path}:#{version}"
 
         # 't' in the build_options sets the tag for the image we're building
-        build_options = { 't' => "#{path}:#{version}" }
+        build_options = { 't' => "#{path}:#{version}", 'dockerfile' => dockerfile }
         Docker::Image.build_from_dir(directory, build_options)
       end
     end
@@ -52,7 +56,7 @@ class PuppetDockerTools
       PuppetDockerTools::Utilities.pull("#{hadolint_container}:latest")
       container = Docker::Container.create('Cmd' => ['/bin/sh', '-c', "hadolint --ignore DL3008 --ignore DL4000 --ignore DL4001 - "], 'Image' => hadolint_container, 'OpenStdin' => true, 'StdinOnce' => true)
       # This container.tap startes the container created above, and passes directory/Dockerfile to the container
-      container.tap(&:start).attach(stdin: "#{directory}/#{PuppetDockerTools::DOCKERFILE}")
+      container.tap(&:start).attach(stdin: "#{directory}/#{dockerfile}")
       # Wait for the run to finish
       container.wait
       exit_status = container.json['State']['ExitCode']
@@ -70,7 +74,7 @@ class PuppetDockerTools
 
       # We always want to push a versioned label in addition to the latest label
       unless version
-        fail "No version specified in #{PuppetDockerTools::DOCKERFILE} for #{path}"
+        fail "No version specified in #{dockerfile} for #{path}"
       end
 
       puts "Pushing #{path}:#{version} to Docker Hub"
@@ -89,25 +93,21 @@ class PuppetDockerTools
     # Update vcs-ref and build-date labels in the Dockerfile
     #
     def rev_labels
-      dockerfile = File.join(directory, PuppetDockerTools::DOCKERFILE)
-
-      unless File.exist? dockerfile
-        fail "File #{dockerfile} doesn't exist."
-      end
+      file = File.join(directory, dockerfile)
 
       values_to_update = {
         "#{namespace}.vcs-ref" => PuppetDockerTools::Utilities.current_git_sha(directory),
         "#{namespace}.build-date" => Time.now.utc.iso8601
       }
 
-      text = File.read(dockerfile)
+      text = File.read(file)
       values_to_update.each do |key, value|
         original = text.clone
         text = text.gsub(/#{key}=\"[a-z0-9A-Z\-:]*\"/, "#{key}=\"#{value}\"")
-        puts "Updating #{key} in #{dockerfile}" unless original == text
+        puts "Updating #{key} in #{file}" unless original == text
       end
 
-      File.open(dockerfile, 'w') { |file| file.puts text }
+      File.open(file, 'w') { |f| f.puts text }
     end
 
     # Run spec tests
@@ -123,7 +123,7 @@ class PuppetDockerTools
     # Get the version set in the Dockerfile in the specified directory
     #
     def version
-      puts PuppetDockerTools::Utilities.get_value_from_env('version', namespace: namespace, directory: directory)
+      puts PuppetDockerTools::Utilities.get_value_from_env('version', namespace: namespace, directory: directory, dockerfile: dockerfile)
     end
   end
 end

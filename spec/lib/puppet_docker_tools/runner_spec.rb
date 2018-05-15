@@ -3,33 +3,48 @@ require 'puppet_docker_tools/runner'
 require 'docker'
 
 describe PuppetDockerTools::Runner do
-  def create_runner(directory:, repository:, namespace:)
-    allow(File).to receive(:exist?).with("#{directory}/Dockerfile").and_return(true)
-    PuppetDockerTools::Runner.new(directory: directory, repository: repository, namespace: namespace)
+  def create_runner(directory:, repository:, namespace:, dockerfile:)
+    allow(File).to receive(:exist?).with("#{directory}/#{dockerfile}").and_return(true)
+    PuppetDockerTools::Runner.new(directory: directory, repository: repository, namespace: namespace, dockerfile: dockerfile)
   end
 
-  let(:runner) { create_runner(directory: '/tmp/test-image', repository: 'test', namespace: 'org.label-schema')}
+  let(:runner) { create_runner(directory: '/tmp/test-image', repository: 'test', namespace: 'org.label-schema', dockerfile: 'Dockerfile') }
+
+  describe '#initialize' do
+    it "should fail if the dockerfile doesn't exist" do
+      allow(File).to receive(:exist?).with('/tmp/test-image/Dockerfile').and_return(false)
+      expect { PuppetDockerTools::Runner.new(directory: '/tmp/test-image', repository: 'test', namespace: 'org.label-schema', dockerfile: 'Dockerfile') }.to raise_error(RuntimeError, /doesn't exist/)
+    end
+  end
 
   describe '#build' do
     let(:image) { double(Docker::Image) }
 
     it 'builds a latest and version tag if version is found' do
-      expect(PuppetDockerTools::Utilities).to receive(:get_value_from_env).with('version', namespace: 'org.label-schema', directory: '/tmp/test-image').and_return('1.2.3')
-      expect(Docker::Image).to receive(:build_from_dir).with('/tmp/test-image', { 't' => 'test/test-image:1.2.3' }).and_return(image)
-      expect(Docker::Image).to receive(:build_from_dir).with('/tmp/test-image', { 't' => 'test/test-image:latest' }).and_return(image)
+      expect(PuppetDockerTools::Utilities).to receive(:get_value_from_env).with('version', namespace: runner.namespace, directory: runner.directory, dockerfile: runner.dockerfile).and_return('1.2.3')
+      expect(Docker::Image).to receive(:build_from_dir).with(runner.directory, { 't' => 'test/test-image:1.2.3', 'dockerfile' => runner.dockerfile }).and_return(image)
+      expect(Docker::Image).to receive(:build_from_dir).with(runner.directory, { 't' => 'test/test-image:latest', 'dockerfile' => runner.dockerfile }).and_return(image)
       runner.build
     end
 
     it 'builds just a latest tag if no version is found' do
-      expect(PuppetDockerTools::Utilities).to receive(:get_value_from_env).with('version', namespace: 'org.label-schema', directory: '/tmp/test-image').and_return(nil)
-      expect(Docker::Image).to receive(:build_from_dir).with('/tmp/test-image', { 't' => 'test/test-image:latest' }).and_return(image)
+      expect(PuppetDockerTools::Utilities).to receive(:get_value_from_env).with('version', namespace: runner.namespace, directory: runner.directory, dockerfile: runner.dockerfile).and_return(nil)
+      expect(Docker::Image).to receive(:build_from_dir).with(runner.directory, { 't' => 'test/test-image:latest', 'dockerfile' => runner.dockerfile }).and_return(image)
       runner.build
     end
 
     it 'ignores the cache when that parameter is set' do
-      expect(PuppetDockerTools::Utilities).to receive(:get_value_from_env).with('version', namespace: 'org.label-schema', directory: '/tmp/test-image').and_return(nil)
-      expect(Docker::Image).to receive(:build_from_dir).with('/tmp/test-image', { 't' => 'test/test-image:latest', 'nocache' => true }).and_return(image)
+      expect(PuppetDockerTools::Utilities).to receive(:get_value_from_env).with('version', namespace: runner.namespace, directory: runner.directory, dockerfile: runner.dockerfile).and_return(nil)
+      expect(Docker::Image).to receive(:build_from_dir).with(runner.directory, { 't' => 'test/test-image:latest', 'nocache' => true, 'dockerfile' => runner.dockerfile }).and_return(image)
       runner.build(no_cache: true)
+    end
+
+    it 'uses a custom dockerfile if passed' do
+      allow(File).to receive(:exist?).with('/tmp/test-image/Dockerfile.test').and_return(true)
+      expect(PuppetDockerTools::Utilities).to receive(:get_value_from_env).with('version', namespace: 'org.label-schema', directory: '/tmp/test-image', dockerfile: 'Dockerfile.test').and_return(nil)
+      expect(Docker::Image).to receive(:build_from_dir).with('/tmp/test-image', { 't' => 'test/test-image:latest', 'dockerfile' => 'Dockerfile.test' }).and_return(image)
+      local_runner = create_runner(directory: '/tmp/test-image', repository: 'test', namespace: 'org.label-schema', dockerfile: 'Dockerfile.test')
+      local_runner.build
     end
   end
 
@@ -123,17 +138,17 @@ HERE
 
     it "should update vcs-ref and build-date" do
       test_dir = Dir.mktmpdir('spec')
-      File.open("#{test_dir}/#{PuppetDockerTools::DOCKERFILE}", 'w') { |file|
+      File.open("#{test_dir}/Dockerfile", 'w') { |file|
         file.puts(original_dockerfile)
       }
-      local_runner = create_runner(directory: test_dir, repository: 'test', namespace: 'org.label-schema')
+      local_runner = create_runner(directory: test_dir, repository: 'test', namespace: 'org.label-schema', dockerfile: 'Dockerfile')
       expect(PuppetDockerTools::Utilities).to receive(:current_git_sha).with(test_dir).and_return('8d7b9277c02f5925f5901e5aeb4df9b8573ac70e')
       expect(Time).to receive(:now).and_return(Time.at(1526337315))
       local_runner.rev_labels
-      expect(File.read("#{test_dir}/#{PuppetDockerTools::DOCKERFILE}")).to eq(updated_dockerfile)
+      expect(File.read("#{test_dir}/#{local_runner.dockerfile}")).to eq(updated_dockerfile)
 
       # cleanup cleanup
-      FileUtils.rm("#{test_dir}/#{PuppetDockerTools::DOCKERFILE}")
+      FileUtils.rm("#{test_dir}/#{local_runner.dockerfile}")
       FileUtils.rmdir(test_dir)
     end
   end

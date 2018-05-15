@@ -43,17 +43,18 @@ class PuppetDockerTools
     #
     # @param label The label containing the value you want to retrieve, e.g. 'version'
     # @param namespace The namespace for the label, e.g. 'org.label-schema'
-    # @directory The directory containing the Dockerfile, defaults to $PWD
-    def get_value_from_env(label, namespace: '', directory: '.')
-      dockerfile = "#{directory}/#{PuppetDockerTools::DOCKERFILE}"
-      fail "File #{dockerfile} doesn't exist!" unless File.exist? dockerfile
-      text = File.read(dockerfile)
+    # @param directory The directory containing the Dockerfile, defaults to $PWD
+    # @param dockerfile The file name for your dockerfile, defaults to 'Dockerfile'
+    def get_value_from_env(label, namespace: '', directory: '.', dockerfile: 'Dockerfile')
+      file = "#{directory}/#{dockerfile}"
+      fail "File #{file} doesn't exist!" unless File.exist? file
+      text = File.read(file)
 
       value = text.scan(/#{Regexp.escape(namespace)}\.(.+)=(.+) \\?/).to_h[label]
       # expand out environment variables
-      value = get_value_from_variable(value, directory: directory, dockerfile: text) if value.start_with?('$')
+      value = get_value_from_variable(value, directory: directory, dockerfile: dockerfile, dockerfile_contents: text) if value.start_with?('$')
       # check in higher-level image if we didn't find it defined in this docker file
-      value = get_value_from_base_image(label, namespace: namespace, directory: directory) if value.nil?
+      value = get_value_from_base_image(label, namespace: namespace, directory: directory, dockerfile: dockerfile) if value.nil?
       # This gets rid of leading or trailing quotes
       value.gsub(/\A"|"\Z/, '')
     end
@@ -129,14 +130,15 @@ class PuppetDockerTools
     #
     # @param key The key to read from the Dockerfile, e.g. 'from'
     # @param directory The directory containing the Dockerfile, defaults to $PWD
-    # @param dockerfile A string containing the contents of the Dockerfile [optional]
-    def get_value_from_dockerfile(key, directory: '.', dockerfile: '')
-      if dockerfile.empty?
-        file = "#{directory}/#{PuppetDockerTools::DOCKERFILE}"
+    # @param dockerfile The file name for your dockerfile, defaults to 'Dockerfile'
+    # @param dockerfile_contents A string containing the contents of the Dockerfile [optional]
+    def get_value_from_dockerfile(key, directory: '.', dockerfile: 'Dockerfile', dockerfile_contents: '')
+      if dockerfile_contents.empty?
+        file = "#{directory}/#{dockerfile}"
         fail "File #{file} doesn't exist!" unless File.exist? file
-        dockerfile = File.read("#{file}")
+        dockerfile_contents = File.read("#{file}")
       end
-      dockerfile[/^#{key.upcase} (.*$)/, 1]
+      dockerfile_contents[/^#{key.upcase} (.*$)/, 1]
     end
     private :get_value_from_dockerfile
 
@@ -145,10 +147,11 @@ class PuppetDockerTools
     # @param value The value we want to get from this image's base image, e.g. 'version'
     # @param namespace The namespace for the value, e.g. 'org.label-schema'
     # @param directory The directory containing the Dockerfile, defaults to $PWD
-    # @param dockerfile A string containing the contents of the Dockerfile [optional]
-    def get_value_from_base_image(value, namespace:, directory: '.', dockerfile: '')
-      base_image = get_value_from_dockerfile('from', directory: directory, dockerfile: dockerfile).split(':').first.split('/').last
-      get_value_from_env(value, namespace: namespace, directory: "#{directory}/../#{base_image}")
+    # @param dockerfile The file name for your dockerfile, defaults to 'Dockerfile'
+    # @param dockerfile_contents A string containing the contents of the Dockerfile [optional]
+    def get_value_from_base_image(value, namespace:, directory: '.', dockerfile: 'Dockerfile', dockerfile_contents: '')
+      base_image = get_value_from_dockerfile('from', directory: directory, dockerfile: dockerfile, dockerfile_contents: dockerfile_contents).split(':').first.split('/').last
+      get_value_from_env(value, namespace: namespace, directory: "#{directory}/../#{base_image}", dockerfile: dockerfile)
     end
     private :get_value_from_base_image
 
@@ -156,16 +159,17 @@ class PuppetDockerTools
     #
     # @param variable The variable we want to look for in the Dockerfile, e.g. $PUPPET_SERVER_VERSION
     # @param directory The directory containing the Dockerfile, defaults to $PWD
-    # # @param dockerfile A string containing the contents of the Dockerfile [optional]
-    def get_value_from_variable(variable, directory: '.', dockerfile: '')
-      if dockerfile.empty?
-        file = "#{directory}/#{PuppetDockerTools::DOCKERFILE}"
+    # @param dockerfile The file name for your dockerfile, defaults to 'Dockerfile'
+    # @param dockerfile_contents A string containing the contents of the Dockerfile [optional]
+    def get_value_from_variable(variable, directory: '.', dockerfile: 'Dockerfile', dockerfile_contents: '')
+      if dockerfile_contents.empty?
+        file = "#{directory}/#{dockerfile}"
         fail "File #{file} doesn't exist!" unless File.exist? file
-        dockerfile = File.read("#{file}")
+        dockerfile_contents = File.read("#{file}")
       end
       # get rid of the leading $ for the variable
       variable[0] = ''
-      dockerfile[/#{variable}=(["a-zA-Z0-9\.]+)/, 1]
+      dockerfile_contents[/#{variable}=(["a-zA-Z0-9\.]+)/, 1]
     end
     private :get_value_from_variable
   end
