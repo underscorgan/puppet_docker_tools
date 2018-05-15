@@ -1,8 +1,14 @@
 require 'puppet_docker_tools'
-require 'puppet_docker_tools/run'
+require 'puppet_docker_tools/runner'
 require 'docker'
 
-describe PuppetDockerTools::Run do
+describe PuppetDockerTools::Runner do
+  def create_runner(directory:, repository:, namespace:)
+    allow(File).to receive(:exist?).with("#{directory}/Dockerfile").and_return(true)
+    PuppetDockerTools::Runner.new(directory: directory, repository: repository, namespace: namespace)
+  end
+
+  let(:runner) { create_runner(directory: '/tmp/test-image', repository: 'test', namespace: 'org.label-schema')}
 
   describe '#build' do
     let(:image) { double(Docker::Image) }
@@ -11,19 +17,19 @@ describe PuppetDockerTools::Run do
       expect(PuppetDockerTools::Utilities).to receive(:get_value_from_env).with('version', namespace: 'org.label-schema', directory: '/tmp/test-image').and_return('1.2.3')
       expect(Docker::Image).to receive(:build_from_dir).with('/tmp/test-image', { 't' => 'test/test-image:1.2.3' }).and_return(image)
       expect(Docker::Image).to receive(:build_from_dir).with('/tmp/test-image', { 't' => 'test/test-image:latest' }).and_return(image)
-      PuppetDockerTools::Run.build('/tmp/test-image', repository: 'test', namespace: 'org.label-schema')
+      runner.build
     end
 
     it 'builds just a latest tag if no version is found' do
       expect(PuppetDockerTools::Utilities).to receive(:get_value_from_env).with('version', namespace: 'org.label-schema', directory: '/tmp/test-image').and_return(nil)
       expect(Docker::Image).to receive(:build_from_dir).with('/tmp/test-image', { 't' => 'test/test-image:latest' }).and_return(image)
-      PuppetDockerTools::Run.build('/tmp/test-image', repository: 'test', namespace: 'org.label-schema')
+      runner.build
     end
 
     it 'ignores the cache when that parameter is set' do
       expect(PuppetDockerTools::Utilities).to receive(:get_value_from_env).with('version', namespace: 'org.label-schema', directory: '/tmp/test-image').and_return(nil)
       expect(Docker::Image).to receive(:build_from_dir).with('/tmp/test-image', { 't' => 'test/test-image:latest', 'nocache' => true }).and_return(image)
-      PuppetDockerTools::Run.build('/tmp/test-image', repository: 'test', namespace: 'org.label-schema', no_cache: true)
+      runner.build(no_cache: true)
     end
   end
 
@@ -46,7 +52,7 @@ describe PuppetDockerTools::Run do
     let(:container) { double(Docker::Container).as_null_object }
 
     before do
-      allow(PuppetDockerTools::Run).to receive(:pull).and_return(double(Docker::Image))
+      allow(PuppetDockerTools::Utilities).to receive(:pull).and_return(double(Docker::Image))
       allow(Docker::Container).to receive(:create).and_return(container)
       allow(container).to receive(:tap).and_return(container)
       allow(container).to receive(:attach)
@@ -54,89 +60,41 @@ describe PuppetDockerTools::Run do
       allow(container).to receive(:logs).and_return('container logs')
     end
 
-    it "shouldn't call exit if there isn't an error" do
+    it "should lint the container" do
       allow(container).to receive(:json).and_return(passing_exit)
-      expect(Kernel).not_to receive(:exit)
-      PuppetDockerTools::Run.lint('/tmp/test-dir')
+      runner.lint
     end
 
     it "should exit with exit status if something went wrong" do
       allow(container).to receive(:json).and_return(failing_exit)
-      expect { PuppetDockerTools::Run.lint('/tmp/test-dir') }.to raise_error(RuntimeError, /container logs/)
-    end
-  end
-
-  describe '#pull' do
-    it 'will pull a single image if the image has a tag' do
-      expect(PuppetDockerTools::Run).to receive(:pull_single_tag).with('test/test-dir:latest')
-      PuppetDockerTools::Run.pull('test/test-dir:latest')
-    end
-
-    it 'will pull all the images if no tag is passed' do
-      expect(PuppetDockerTools::Run).to receive(:pull_all_tags).with('test/test-dir')
-      PuppetDockerTools::Run.pull('test/test-dir')
-    end
-  end
-
-  describe '#pull_all_tags' do
-    let(:image_info) {
-      {
-        'Created' => '2018-05-11T20:09:32Z',
-        'RepoTags' => ['latest', '1.2.3'],
-      }
-    }
-
-    let(:image) { double(Docker::Image) }
-    let(:images) { [image] }
-
-    it 'pulls the tags' do
-      expect(Docker::Image).to receive(:create).with('fromImage' => 'test/test-dir')
-      expect(Docker::Image).to receive(:all).and_return(images)
-      expect(image).to receive(:info).and_return(image_info).twice
-      PuppetDockerTools::Run.pull_all_tags('test/test-dir')
-    end
-  end
-
-  describe '#pull_single_tag' do
-    let(:image_info) {
-      {
-        'Created' => '2018-05-11T20:09:32Z',
-        'RepoTags' => ['1.2.3'],
-      }
-    }
-    let(:image) { double(Docker::Image) }
-
-    it 'pulls the single tag' do
-      expect(Docker::Image).to receive(:create).with('fromImage' => 'test/test-dir:1.2.3').and_return(image)
-      expect(image).to receive(:info).and_return(image_info).twice
-      PuppetDockerTools::Run.pull_single_tag('test/test-dir:1.2.3')
+      expect { runner.lint }.to raise_error(RuntimeError, /container logs/)
     end
   end
 
   describe '#push' do
     it 'should fail if no version is set' do
       expect(PuppetDockerTools::Utilities).to receive(:get_value_from_label).and_return(nil)
-      expect { PuppetDockerTools::Run.push('/tmp/test-dir', repository: 'test', namespace: 'org.label-schema') }.to raise_error(RuntimeError, /no version/i)
+      expect { runner.push }.to raise_error(RuntimeError, /no version/i)
     end
 
     it 'should raise an error if something bad happens pushing the versioned tag' do
-      expect(PuppetDockerTools::Utilities).to receive(:get_value_from_label).with('test/test-dir', value: 'version', namespace: 'org.label-schema').and_return('1.2.3')
-      expect(PuppetDockerTools::Utilities).to receive(:push_to_dockerhub).with('test/test-dir:1.2.3').and_return([1, nil])
-      expect { PuppetDockerTools::Run.push('/tmp/test-dir', repository: 'test', namespace: 'org.label-schema') }.to raise_error(RuntimeError, /1.2.3 to dockerhub/i)
+      expect(PuppetDockerTools::Utilities).to receive(:get_value_from_label).with('test/test-image', value: 'version', namespace: runner.namespace).and_return('1.2.3')
+      expect(PuppetDockerTools::Utilities).to receive(:push_to_dockerhub).with('test/test-image:1.2.3').and_return([1, nil])
+      expect { runner.push }.to raise_error(RuntimeError, /1.2.3 to dockerhub/i)
     end
 
     it 'should raise an error if something bad happens pushing the latest tag' do
-      expect(PuppetDockerTools::Utilities).to receive(:get_value_from_label).with('test/test-dir', value: 'version', namespace: 'org.label-schema').and_return('1.2.3')
-      expect(PuppetDockerTools::Utilities).to receive(:push_to_dockerhub).with('test/test-dir:1.2.3').and_return([0, nil])
-      expect(PuppetDockerTools::Utilities).to receive(:push_to_dockerhub).with('test/test-dir:latest').and_return([1, nil])
-      expect { PuppetDockerTools::Run.push('/tmp/test-dir', repository: 'test', namespace: 'org.label-schema') }.to raise_error(RuntimeError, /latest to dockerhub/i)
+      expect(PuppetDockerTools::Utilities).to receive(:get_value_from_label).with('test/test-image', value: 'version', namespace: runner.namespace).and_return('1.2.3')
+      expect(PuppetDockerTools::Utilities).to receive(:push_to_dockerhub).with('test/test-image:1.2.3').and_return([0, nil])
+      expect(PuppetDockerTools::Utilities).to receive(:push_to_dockerhub).with('test/test-image:latest').and_return([1, nil])
+      expect { runner.push }.to raise_error(RuntimeError, /latest to dockerhub/i)
     end
 
     it 'should push the versioned and latest tags if nothing goes wrong' do
-      expect(PuppetDockerTools::Utilities).to receive(:get_value_from_label).with('test/test-dir', value: 'version', namespace: 'org.label-schema').and_return('1.2.3')
-      expect(PuppetDockerTools::Utilities).to receive(:push_to_dockerhub).with('test/test-dir:1.2.3').and_return([0, nil])
-      expect(PuppetDockerTools::Utilities).to receive(:push_to_dockerhub).with('test/test-dir:latest').and_return([0, nil])
-      PuppetDockerTools::Run.push('/tmp/test-dir', repository: 'test', namespace: 'org.label-schema')
+      expect(PuppetDockerTools::Utilities).to receive(:get_value_from_label).with('test/test-image', value: 'version', namespace: runner.namespace).and_return('1.2.3')
+      expect(PuppetDockerTools::Utilities).to receive(:push_to_dockerhub).with('test/test-image:1.2.3').and_return([0, nil])
+      expect(PuppetDockerTools::Utilities).to receive(:push_to_dockerhub).with('test/test-image:latest').and_return([0, nil])
+      runner.push
     end
   end
 
@@ -163,19 +121,15 @@ LABEL maintainer="Puppet Release Team <release@puppet.com>" \\
 HERE
     }
 
-    it "should fail if the dockerfile doesn't exist" do
-      expect(File).to receive(:exist?).with("/tmp/test-dir/#{PuppetDockerTools::DOCKERFILE}").and_return(false)
-      expect { PuppetDockerTools::Run.rev_labels('/tmp/test-dir', namespace: 'org.label-schema') }.to raise_error(RuntimeError, /doesn't exist/)
-    end
-
     it "should update vcs-ref and build-date" do
       test_dir = Dir.mktmpdir('spec')
       File.open("#{test_dir}/#{PuppetDockerTools::DOCKERFILE}", 'w') { |file|
         file.puts(original_dockerfile)
       }
+      local_runner = create_runner(directory: test_dir, repository: 'test', namespace: 'org.label-schema')
       expect(PuppetDockerTools::Utilities).to receive(:current_git_sha).with(test_dir).and_return('8d7b9277c02f5925f5901e5aeb4df9b8573ac70e')
       expect(Time).to receive(:now).and_return(Time.at(1526337315))
-      PuppetDockerTools::Run.rev_labels(test_dir, namespace: 'org.label-schema')
+      local_runner.rev_labels
       expect(File.read("#{test_dir}/#{PuppetDockerTools::DOCKERFILE}")).to eq(updated_dockerfile)
 
       # cleanup cleanup
@@ -186,10 +140,10 @@ HERE
 
   describe '#spec' do
     it "runs tests under the 'spec' directory" do
-      tests=["/tmp/test-dir/spec/test1_spec.rb", "/tmp/test-dir/spec/test2_spec.rb"]
-      expect(Dir).to receive(:glob).with("/tmp/test-dir/spec/*_spec.rb").and_return(tests)
+      tests=["/tmp/test-image/spec/test1_spec.rb", "/tmp/test-dir/spec/test2_spec.rb"]
+      expect(Dir).to receive(:glob).with("/tmp/test-image/spec/*_spec.rb").and_return(tests)
       expect(RSpec::Core::Runner).to receive(:run).with(tests, $stderr, $stdout).and_return(nil)
-      PuppetDockerTools::Run.spec('/tmp/test-dir')
+      runner.spec
     end
   end
 end

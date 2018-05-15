@@ -146,4 +146,52 @@ HERE
       expect { PuppetDockerTools::Utilities.get_value_from_variable('$PUPPET_SERVER_VERSION', directory: '/tmp/test-dir')}.to raise_error(RuntimeError, /doesn't exist/)
     end
   end
+
+  describe '#pull' do
+    it 'will pull a single image if the image has a tag' do
+      expect(PuppetDockerTools::Utilities).to receive(:pull_single_tag).with('test/test-dir:latest')
+      PuppetDockerTools::Utilities.pull('test/test-dir:latest')
+    end
+
+    it 'will pull all the images if no tag is passed' do
+      expect(PuppetDockerTools::Utilities).to receive(:pull_all_tags).with('test/test-dir')
+      PuppetDockerTools::Utilities.pull('test/test-dir')
+    end
+  end
+
+  describe '#pull_all_tags' do
+    let(:image_info) {
+      {
+        'Created' => '2018-05-11T20:09:32Z',
+        'RepoTags' => ['latest', '1.2.3'],
+      }
+    }
+
+    let(:image) { double(Docker::Image) }
+    let(:images) { [image] }
+
+    it 'pulls the tags' do
+      expect(Docker::Image).to receive(:create).with('fromImage' => 'test/test-dir')
+      expect(Docker::Image).to receive(:all).and_return(images)
+      expect(image).to receive(:info).and_return(image_info).twice
+      PuppetDockerTools::Utilities.pull_all_tags('test/test-dir')
+    end
+  end
+
+  describe '#pull_single_tag' do
+    let(:image_info) {
+      {
+        'Created' => '2018-05-11T20:09:32Z',
+        'RepoTags' => ['1.2.3'],
+      }
+    }
+    let(:image) { double(Docker::Image) }
+
+    it 'pulls the single tag' do
+      expect(Docker::Image).to receive(:create).with('fromImage' => 'test/test-dir:1.2.3').and_return(image)
+      expect(image).to receive(:info).and_return(image_info).twice
+      PuppetDockerTools::Utilities.pull_single_tag('test/test-dir:1.2.3')
+    end
+  end
+
 end

@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 require 'docopt'
 require File.expand_path(File.join(File.dirname(__FILE__), "..", "lib", 'puppet_docker_tools.rb'))
-require 'puppet_docker_tools/run'
+require 'puppet_docker_tools/runner'
 
 doc = <<DOC
 Utilities for building and releasing Puppet docker images.
@@ -55,26 +55,28 @@ if options['IMAGE'].nil?
   options['IMAGE'] = "#{options['--repository']}/#{File.basename(options['DIRECTORY'])}"
 end
 
+command_runner = PuppetDockerTools::Runner.new(directory: options['DIRECTORY'], repository: options['--repository'], namespace: options['--namespace'])
+
 begin
   if options['build']
-    PuppetDockerTools::Run.build(options['DIRECTORY'], repository: options['--repository'], namespace: options['--namespace'], no_cache: options['--no-cache'])
+    command_runner.build(no_cache: options['--no-cache'])
   elsif options['lint']
-    PuppetDockerTools::Run.lint(options['DIRECTORY'])
+    command_runner.lint
   elsif options['pull']
-    PuppetDockerTools::Run.pull(options['IMAGE'])
+    PuppetDockerTools::Utilities.pull(options['IMAGE'])
   elsif options['push']
-    PuppetDockerTools::Run.push(options['DIRECTORY'], repository: options['--repository'], namespace: options['--namespace'])
+    command_runner.push
   elsif options['rev-labels']
-    PuppetDockerTools::Run.rev_labels(options['DIRECTORY'], namespace: options['--namespace'])
+    command_runner.rev_labels
   elsif options['spec']
-    PuppetDockerTools::Run.spec(options['DIRECTORY'])
+    command_runner.spec
   elsif options['test']
-    PuppetDockerTools::Run.lint(options['DIRECTORY'])
-    PuppetDockerTools::Run.spec(options['DIRECTORY'])
+    command_runner.lint
+    command_runner.spec
   elsif options['update-base-images']
-    PuppetDockerTools::Run.update_base_images(options['TAG'])
+    PuppetDockerTools::Utilities.update_base_images(options['TAG'])
   elsif options['version']
-    PuppetDockerTools::Run.version(options['DIRECTORY'], namespace: options['--namespace'])
+    command_runner.version
   elsif options['help']
     puts doc
   end

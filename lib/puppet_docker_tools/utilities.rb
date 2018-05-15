@@ -79,6 +79,52 @@ class PuppetDockerTools
       timestamp
     end
 
+    # Pull a docker image
+    #
+    # @param image The image to pull. If the image does not include the tag to
+    #        pull, it will pull all tags for that image
+    def pull(image)
+      if image.include?(':')
+        puts "Pulling #{image}"
+        PuppetDockerTools::Utilities.pull_single_tag(image)
+      else
+        puts "Pulling all tags for #{image}"
+        PuppetDockerTools::Utilities.pull_all_tags(image)
+      end
+    end
+
+    # Pull all tags for a docker image
+    #
+    # @param image The image to pull, e.g. puppet/puppetserver
+    def pull_all_tags(image)
+      Docker::Image.create('fromImage' => image)
+
+      # Filter through existing tags of that image so we can output what we pulled
+      images = Docker::Image.all('filter' => image)
+      images.each do |img|
+        timestamp = PuppetDockerTools::Utilities.format_timestamp(img.info["Created"])
+        puts "Pulled #{img.info["RepoTags"].join(', ')}, last updated #{timestamp}"
+      end
+    end
+
+    # Pull a single tag of a docker image
+    #
+    # @param tag The image/tag to pull, e.g. puppet/puppetserver:latest
+    def pull_single_tag(tag)
+      image = Docker::Image.create('fromImage' => tag)
+      timestamp = PuppetDockerTools::Utilities.format_timestamp(image.info["Created"])
+      puts "Pulled #{image.info["RepoTags"].first}, last updated #{timestamp}"
+    end
+
+    # Pull the specified tags
+    #
+    # @param tags [Array] A list of tags to pull, e.g. ['centos:7', 'ubuntu:16.04']
+    def update_base_images(tags)
+      tags.each do |tag|
+        PuppetDockerTools::Utilities.pull(tag)
+      end
+    end
+
     # Get a value from a Dockerfile
     #
     # @param key The key to read from the Dockerfile, e.g. 'from'
