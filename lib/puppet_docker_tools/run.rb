@@ -40,7 +40,9 @@ class PuppetDockerTools
       end
     end
 
-    # Run hadolint on the Dockerfile in the specified directory
+    # Run hadolint on the Dockerfile in the specified directory. Hadolint is a
+    # linter for dockerfiles that also validates inline bash with shellcheck.
+    # For more info, see the github repo (https://github.com/hadolint/hadolint)
     #
     # @param directory
     def lint(directory)
