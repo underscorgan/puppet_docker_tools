@@ -49,7 +49,7 @@ class PuppetDockerTools
       PuppetDockerTools::Run.pull("#{hadolint_container}:latest")
       container = Docker::Container.create('Cmd' => ['/bin/sh', '-c', "hadolint --ignore DL3008 --ignore DL4000 --ignore DL4001 - "], 'Image' => hadolint_container, 'OpenStdin' => true, 'StdinOnce' => true)
       # This container.tap startes the container created above, and passes directory/Dockerfile to the container
-      container.tap(&:start).attach(stdin: "#{directory}/Dockerfile")
+      container.tap(&:start).attach(stdin: "#{directory}/#{PuppetDockerTools::DOCKERFILE}")
       # Wait for the run to finish
       container.wait
       exit_status = container.json['State']['ExitCode']
@@ -108,7 +108,7 @@ class PuppetDockerTools
 
       # We always want to push a versioned label in addition to the latest label
       unless version
-        fail "No version specified in Dockerfile for #{path}"
+        fail "No version specified in #{PuppetDockerTools::DOCKERFILE} for #{path}"
       end
 
       puts "Pushing #{path}:#{version} to Docker Hub"
@@ -129,7 +129,7 @@ class PuppetDockerTools
     # @param directory The directory containing the Dockerfile to update
     # @param namespace The namespace for the labels
     def rev_labels(directory, namespace: )
-      dockerfile = File.join(directory, 'Dockerfile')
+      dockerfile = File.join(directory, PuppetDockerTools::DOCKERFILE)
 
       unless File.exist? dockerfile
         fail "File #{dockerfile} doesn't exist."

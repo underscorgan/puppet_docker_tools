@@ -45,7 +45,7 @@ class PuppetDockerTools
     # @param namespace The namespace for the label, e.g. 'org.label-schema'
     # @directory The directory containing the Dockerfile, defaults to $PWD
     def get_value_from_env(label, namespace: '', directory: '.')
-      dockerfile = "#{directory}/Dockerfile"
+      dockerfile = "#{directory}/#{PuppetDockerTools::DOCKERFILE}"
       fail "File #{dockerfile} doesn't exist!" unless File.exist? dockerfile
       text = File.read(dockerfile)
 
@@ -86,7 +86,7 @@ class PuppetDockerTools
     # @param dockerfile A string containing the contents of the Dockerfile [optional]
     def get_value_from_dockerfile(key, directory: '.', dockerfile: '')
       if dockerfile.empty?
-        file = "#{directory}/Dockerfile"
+        file = "#{directory}/#{PuppetDockerTools::DOCKERFILE}"
         fail "File #{file} doesn't exist!" unless File.exist? file
         dockerfile = File.read("#{file}")
       end
@@ -113,7 +113,7 @@ class PuppetDockerTools
     # # @param dockerfile A string containing the contents of the Dockerfile [optional]
     def get_value_from_variable(variable, directory: '.', dockerfile: '')
       if dockerfile.empty?
-        file = "#{directory}/Dockerfile"
+        file = "#{directory}/#{PuppetDockerTools::DOCKERFILE}"
         fail "File #{file} doesn't exist!" unless File.exist? file
         dockerfile = File.read("#{file}")
       end

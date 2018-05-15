@@ -1,3 +1,4 @@
+require 'puppet_docker_tools'
 require 'puppet_docker_tools/run'
 require 'docker'
 
@@ -163,22 +164,22 @@ HERE
     }
 
     it "should fail if the dockerfile doesn't exist" do
-      expect(File).to receive(:exist?).with('/tmp/test-dir/Dockerfile').and_return(false)
+      expect(File).to receive(:exist?).with("/tmp/test-dir/#{PuppetDockerTools::DOCKERFILE}").and_return(false)
       expect { PuppetDockerTools::Run.rev_labels('/tmp/test-dir', namespace: 'org.label-schema') }.to raise_error(RuntimeError, /doesn't exist/)
     end
 
     it "should update vcs-ref and build-date" do
       test_dir = Dir.mktmpdir('spec')
-      File.open("#{test_dir}/Dockerfile", 'w') { |file|
+      File.open("#{test_dir}/#{PuppetDockerTools::DOCKERFILE}", 'w') { |file|
         file.puts(original_dockerfile)
       }
       expect(PuppetDockerTools::Utilities).to receive(:current_git_sha).with(test_dir).and_return('8d7b9277c02f5925f5901e5aeb4df9b8573ac70e')
       expect(Time).to receive(:now).and_return(Time.at(1526337315))
       PuppetDockerTools::Run.rev_labels(test_dir, namespace: 'org.label-schema')
-      expect(File.read("#{test_dir}/Dockerfile")).to eq(updated_dockerfile)
+      expect(File.read("#{test_dir}/#{PuppetDockerTools::DOCKERFILE}")).to eq(updated_dockerfile)
 
       # cleanup cleanup
-      FileUtils.rm("#{test_dir}/Dockerfile")
+      FileUtils.rm("#{test_dir}/#{PuppetDockerTools::DOCKERFILE}")
       FileUtils.rmdir(test_dir)
     end
   end
