@@ -58,29 +58,31 @@ if options['IMAGE'].nil?
 end
 
 begin
-  command_runner = PuppetDockerTools::Runner.new(directory: options['DIRECTORY'], repository: options['--repository'], namespace: options['--namespace'], dockerfile: options['--dockerfile'])
-
-  if options['build']
-    command_runner.build(no_cache: options['--no-cache'])
-  elsif options['lint']
-    command_runner.lint
+  if options['help']
+    puts doc
   elsif options['pull']
     PuppetDockerTools::Utilities.pull(options['IMAGE'])
-  elsif options['push']
-    command_runner.push
-  elsif options['rev-labels']
-    command_runner.rev_labels
-  elsif options['spec']
-    command_runner.spec
-  elsif options['test']
-    command_runner.lint
-    command_runner.spec
   elsif options['update-base-images']
     PuppetDockerTools::Utilities.update_base_images(options['TAG'])
-  elsif options['version']
-    command_runner.version
-  elsif options['help']
-    puts doc
+  else
+    command_runner = PuppetDockerTools::Runner.new(directory: options['DIRECTORY'], repository: options['--repository'], namespace: options['--namespace'], dockerfile: options['--dockerfile'])
+
+    if options['build']
+      command_runner.build(no_cache: options['--no-cache'])
+    elsif options['lint']
+      command_runner.lint
+    elsif options['push']
+      command_runner.push
+    elsif options['rev-labels']
+      command_runner.rev_labels
+    elsif options['spec']
+      command_runner.spec
+    elsif options['test']
+      command_runner.lint
+      command_runner.spec
+    elsif options['version']
+      command_runner.version
+    end
   end
 rescue => e
   puts "ERROR:\n\t#{e}"
