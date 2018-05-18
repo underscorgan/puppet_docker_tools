@@ -52,9 +52,17 @@ class PuppetDockerTools
     #
     def lint
       hadolint_container = 'hadolint/hadolint'
+      ignore_rules = [
+        'DL3008',
+        'DL3018',
+        'DL4000',
+        'DL4001',
+      ]
+      ignore_string = ignore_rules.map { |x| "--ignore #{x}" }.join(' ')
+
       # make sure we have the container locally
       PuppetDockerTools::Utilities.pull("#{hadolint_container}:latest")
-      container = Docker::Container.create('Cmd' => ['/bin/sh', '-c', "hadolint --ignore DL3008 --ignore DL4000 --ignore DL4001 - "], 'Image' => hadolint_container, 'OpenStdin' => true, 'StdinOnce' => true)
+      container = Docker::Container.create('Cmd' => ['/bin/sh', '-c', "hadolint #{ignore_string} - "], 'Image' => hadolint_container, 'OpenStdin' => true, 'StdinOnce' => true)
       # This container.tap startes the container created above, and passes directory/Dockerfile to the container
       container.tap(&:start).attach(stdin: "#{directory}/#{dockerfile}")
       # Wait for the run to finish
