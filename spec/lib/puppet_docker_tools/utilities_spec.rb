@@ -2,6 +2,7 @@ require 'puppet_docker_tools'
 require 'puppet_docker_tools/utilities'
 
 describe PuppetDockerTools::Utilities do
+  let(:dockerfile) { 'Dockerfile' }
   let(:base_dockerfile_contents) { <<-HERE
 FROM ubuntu:16.04
 
@@ -71,21 +72,21 @@ HERE
 
   describe "#get_value_from_env" do
     it "should fail if the dockerfile doesn't exist" do
-      allow(File).to receive(:read).with("/tmp/test-dir/#{PuppetDockerTools::DOCKERFILE}").and_return(base_dockerfile_contents)
+      allow(File).to receive(:read).with("/tmp/test-dir/#{dockerfile}").and_return(base_dockerfile_contents)
       expect { PuppetDockerTools::Utilities.get_value_from_env('from', directory: '/tmp/test-dir')}.to raise_error(RuntimeError, /doesn't exist/)
     end
 
     it "calls get_value_from_variable if it looks like we have a variable" do
-      allow(File).to receive(:exist?).with("/tmp/test-dir/#{PuppetDockerTools::DOCKERFILE}").and_return(true)
-      allow(File).to receive(:read).with("/tmp/test-dir/#{PuppetDockerTools::DOCKERFILE}").and_return(base_dockerfile_contents)
+      allow(File).to receive(:exist?).with("/tmp/test-dir/#{dockerfile}").and_return(true)
+      allow(File).to receive(:read).with("/tmp/test-dir/#{dockerfile}").and_return(base_dockerfile_contents)
       expect(PuppetDockerTools::Utilities.get_value_from_env('version', namespace: 'org.label-schema', directory: '/tmp/test-dir')).to eq('5.3.1')
     end
 
     it "calls get value_from_base_image if we didn't find the variable in our dockerfile" do
-      allow(File).to receive(:exist?).with("/tmp/test-dir/#{PuppetDockerTools::DOCKERFILE}").and_return(true)
-      allow(File).to receive(:read).with("/tmp/test-dir/#{PuppetDockerTools::DOCKERFILE}").and_return(dockerfile_contents)
-      allow(File).to receive(:exist?).with("/tmp/test-dir/../puppetserver-standalone/#{PuppetDockerTools::DOCKERFILE}").and_return(true)
-      allow(File).to receive(:read).with("/tmp/test-dir/../puppetserver-standalone/#{PuppetDockerTools::DOCKERFILE}").and_return(base_dockerfile_contents)
+      allow(File).to receive(:exist?).with("/tmp/test-dir/#{dockerfile}").and_return(true)
+      allow(File).to receive(:read).with("/tmp/test-dir/#{dockerfile}").and_return(dockerfile_contents)
+      allow(File).to receive(:exist?).with("/tmp/test-dir/../puppetserver-standalone/#{dockerfile}").and_return(true)
+      allow(File).to receive(:read).with("/tmp/test-dir/../puppetserver-standalone/#{dockerfile}").and_return(base_dockerfile_contents)
       expect(PuppetDockerTools::Utilities.get_value_from_env('version', namespace: 'org.label-schema', directory: '/tmp/test-dir')).to eq('5.3.1')
     end
   end
@@ -102,27 +103,27 @@ HERE
 
   describe "get_value_from_dockerfile" do
     it "reads the key from a passed string if dockerfile is passed" do
-      expect(PuppetDockerTools::Utilities.get_value_from_dockerfile('from', dockerfile: base_dockerfile_contents)).to eq('ubuntu:16.04')
+      expect(PuppetDockerTools::Utilities.get_value_from_dockerfile('from', dockerfile_contents: base_dockerfile_contents)).to eq('ubuntu:16.04')
     end
 
     it "reads the key from a dockerfile if directory is passed" do
-      allow(File).to receive(:read).with("/tmp/test-dir/#{PuppetDockerTools::DOCKERFILE}").and_return(base_dockerfile_contents)
-      allow(File).to receive(:exist?).with("/tmp/test-dir/#{PuppetDockerTools::DOCKERFILE}").and_return(true)
+      allow(File).to receive(:read).with("/tmp/test-dir/#{dockerfile}").and_return(base_dockerfile_contents)
+      allow(File).to receive(:exist?).with("/tmp/test-dir/#{dockerfile}").and_return(true)
       expect(PuppetDockerTools::Utilities.get_value_from_dockerfile('from', directory: '/tmp/test-dir')).to eq('ubuntu:16.04')
     end
 
     it "fails if the dockerfile doesn't exist" do
-      allow(File).to receive(:read).with("/tmp/test-dir/#{PuppetDockerTools::DOCKERFILE}").and_return(base_dockerfile_contents)
+      allow(File).to receive(:read).with("/tmp/test-dir/#{dockerfile}").and_return(base_dockerfile_contents)
       expect { PuppetDockerTools::Utilities.get_value_from_dockerfile('from', directory: '/tmp/test-dir')}.to raise_error(RuntimeError, /doesn't exist/)
     end
   end
 
   describe "#get_value_from_base_image" do
     before do
-      allow(File).to receive(:exist?).with("/tmp/test-dir/#{PuppetDockerTools::DOCKERFILE}").and_return(true)
-      allow(File).to receive(:read).with("/tmp/test-dir/#{PuppetDockerTools::DOCKERFILE}").and_return(dockerfile_contents)
-      allow(File).to receive(:exist?).with("/tmp/test-dir/../puppetserver-standalone/#{PuppetDockerTools::DOCKERFILE}").and_return(true)
-      allow(File).to receive(:read).with("/tmp/test-dir/../puppetserver-standalone/#{PuppetDockerTools::DOCKERFILE}").and_return(base_dockerfile_contents)
+      allow(File).to receive(:exist?).with("/tmp/test-dir/#{dockerfile}").and_return(true)
+      allow(File).to receive(:read).with("/tmp/test-dir/#{dockerfile}").and_return(dockerfile_contents)
+      allow(File).to receive(:exist?).with("/tmp/test-dir/../puppetserver-standalone/#{dockerfile}").and_return(true)
+      allow(File).to receive(:read).with("/tmp/test-dir/../puppetserver-standalone/#{dockerfile}").and_return(base_dockerfile_contents)
     end
 
     it "Reads the value from the base image" do
@@ -132,18 +133,66 @@ HERE
 
   describe "#get_value_from_variable" do
     it "reads the value from a passed string if dockerfile is passed" do
-      expect(PuppetDockerTools::Utilities.get_value_from_variable('$PUPPET_SERVER_VERSION', dockerfile: base_dockerfile_contents)).to eq('"5.3.1"')
+      expect(PuppetDockerTools::Utilities.get_value_from_variable('$PUPPET_SERVER_VERSION', dockerfile_contents: base_dockerfile_contents)).to eq('"5.3.1"')
     end
 
     it "reads the value from a dockerfile if directory is passed" do
-      allow(File).to receive(:read).with("/tmp/test-dir/#{PuppetDockerTools::DOCKERFILE}").and_return(base_dockerfile_contents)
-      allow(File).to receive(:exist?).with("/tmp/test-dir/#{PuppetDockerTools::DOCKERFILE}").and_return(true)
-      expect(PuppetDockerTools::Utilities.get_value_from_variable('$PUPPET_SERVER_VERSION', dockerfile: base_dockerfile_contents)).to eq('"5.3.1"')
+      allow(File).to receive(:read).with("/tmp/test-dir/#{dockerfile}").and_return(base_dockerfile_contents)
+      allow(File).to receive(:exist?).with("/tmp/test-dir/#{dockerfile}").and_return(true)
+      expect(PuppetDockerTools::Utilities.get_value_from_variable('$PUPPET_SERVER_VERSION', dockerfile_contents: base_dockerfile_contents)).to eq('"5.3.1"')
     end
 
     it "fails if the dockerfile doesn't exist" do
-      allow(File).to receive(:read).with("/tmp/test-dir/#{PuppetDockerTools::DOCKERFILE}").and_return(base_dockerfile_contents)
+      allow(File).to receive(:read).with("/tmp/test-dir/#{dockerfile}").and_return(base_dockerfile_contents)
       expect { PuppetDockerTools::Utilities.get_value_from_variable('$PUPPET_SERVER_VERSION', directory: '/tmp/test-dir')}.to raise_error(RuntimeError, /doesn't exist/)
     end
   end
+
+  describe '#pull' do
+    it 'will pull a single image if the image has a tag' do
+      expect(PuppetDockerTools::Utilities).to receive(:pull_single_tag).with('test/test-dir:latest')
+      PuppetDockerTools::Utilities.pull('test/test-dir:latest')
+    end
+
+    it 'will pull all the images if no tag is passed' do
+      expect(PuppetDockerTools::Utilities).to receive(:pull_all_tags).with('test/test-dir')
+      PuppetDockerTools::Utilities.pull('test/test-dir')
+    end
+  end
+
+  describe '#pull_all_tags' do
+    let(:image_info) {
+      {
+        'Created' => '2018-05-11T20:09:32Z',
+        'RepoTags' => ['latest', '1.2.3'],
+      }
+    }
+
+    let(:image) { double(Docker::Image) }
+    let(:images) { [image] }
+
+    it 'pulls the tags' do
+      expect(Docker::Image).to receive(:create).with('fromImage' => 'test/test-dir')
+      expect(Docker::Image).to receive(:all).and_return(images)
+      expect(image).to receive(:info).and_return(image_info).twice
+      PuppetDockerTools::Utilities.pull_all_tags('test/test-dir')
+    end
+  end
+
+  describe '#pull_single_tag' do
+    let(:image_info) {
+      {
+        'Created' => '2018-05-11T20:09:32Z',
+        'RepoTags' => ['1.2.3'],
+      }
+    }
+    let(:image) { double(Docker::Image) }
+
+    it 'pulls the single tag' do
+      expect(Docker::Image).to receive(:create).with('fromImage' => 'test/test-dir:1.2.3').and_return(image)
+      expect(image).to receive(:info).and_return(image_info).twice
+      PuppetDockerTools::Utilities.pull_single_tag('test/test-dir:1.2.3')
+    end
+  end
+
 end

@@ -5,5 +5,4 @@ $:.include?(File.dirname(__FILE__)) || $:.include?(LIBDIR)
 
 # The main entry point is {PuppetDockerTools::Run}
 class PuppetDockerTools
-  DOCKERFILE='Dockerfile'
 end

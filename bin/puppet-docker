@@ -1,20 +1,20 @@
 #!/usr/bin/env ruby
 require 'docopt'
 require File.expand_path(File.join(File.dirname(__FILE__), "..", "lib", 'puppet_docker_tools.rb'))
-require 'puppet_docker_tools/run'
+require 'puppet_docker_tools/runner'
 
 doc = <<DOC
 Utilities for building and releasing Puppet docker images.
 
 Usage:
-  puppet-docker build [DIRECTORY] [--repository=<repo>] [--namespace=<namespace>] [--no-cache]
-  puppet-docker lint [DIRECTORY]
+  puppet-docker build [DIRECTORY] [--dockerfile=<dockerfile>] [--repository=<repo>] [--namespace=<namespace>] [--no-cache]
+  puppet-docker lint [DIRECTORY] [--dockerfile=<dockerfile>]
   puppet-docker pull [IMAGE] [--repository=<repo>]
-  puppet-docker push [DIRECTORY] [--repository=<repo>] [--namespace=<namespace>]
-  puppet-docker rev-labels [DIRECTORY] [--namespace=<namespace>]
+  puppet-docker push [DIRECTORY] [--dockerfile=<dockerfile>] [--repository=<repo>] [--namespace=<namespace>]
+  puppet-docker rev-labels [DIRECTORY] [--dockerfile=<dockerfile>] [--namespace=<namespace>]
   puppet-docker spec [DIRECTORY]
-  puppet-docker test [DIRECTORY]
-  puppet-docker version [DIRECTORY] [--namespace=<namespace>]
+  puppet-docker test [DIRECTORY] [--dockerfile=<dockerfile>]
+  puppet-docker version [DIRECTORY] [--dockerfile=<dockerfile>] [--namespace=<namespace>]
   puppet-docker update-base-images [TAG]...
   puppet-docker help
 
@@ -24,9 +24,10 @@ Arguments:
   TAG        Pull latest versions of images at TAG. Defaults to ['ubuntu:16.04', 'centos:7', 'alpine:3.4', 'debian:9', 'postgres:9.6.8']
 
 Options:
-  --repository=<repo>      Dockerhub repository containing the image [default: puppet]
-  --no-cache               Disable use of layer cache when building this image. Defaults to using the cache.
-  --namespace=<namespace>  Namespace for labels on the container [default: org.label-schema]
+  --repository=<repo>        Dockerhub repository containing the image [default: puppet]
+  --no-cache                 Disable use of layer cache when building this image. Defaults to using the cache.
+  --namespace=<namespace>    Namespace for labels on the container [default: org.label-schema]
+  --dockerfile=<dockerfile>  File name for your dockerfile [default: Dockerfile]
 DOC
 
 begin
@@ -41,6 +42,7 @@ defaults = {
   'TAG'          => ['ubuntu:16.04', 'centos:7', 'alpine:3.4', 'debian:9', 'postgres:9.6.8'],
   '--namespace'  => 'org.label-schema',
   '--repository' => 'puppet',
+  '--dockerfile' => 'Dockerfile',
 }
 
 options.merge!(defaults) do |key, option, default|
@@ -56,27 +58,31 @@ if options['IMAGE'].nil?
 end
 
 begin
-  if options['build']
-    PuppetDockerTools::Run.build(options['DIRECTORY'], repository: options['--repository'], namespace: options['--namespace'], no_cache: options['--no-cache'])
-  elsif options['lint']
-    PuppetDockerTools::Run.lint(options['DIRECTORY'])
-  elsif options['pull']
-    PuppetDockerTools::Run.pull(options['IMAGE'])
-  elsif options['push']
-    PuppetDockerTools::Run.push(options['DIRECTORY'], repository: options['--repository'], namespace: options['--namespace'])
-  elsif options['rev-labels']
-    PuppetDockerTools::Run.rev_labels(options['DIRECTORY'], namespace: options['--namespace'])
-  elsif options['spec']
-    PuppetDockerTools::Run.spec(options['DIRECTORY'])
-  elsif options['test']
-    PuppetDockerTools::Run.lint(options['DIRECTORY'])
-    PuppetDockerTools::Run.spec(options['DIRECTORY'])
-  elsif options['update-base-images']
-    PuppetDockerTools::Run.update_base_images(options['TAG'])
-  elsif options['version']
-    PuppetDockerTools::Run.version(options['DIRECTORY'], namespace: options['--namespace'])
-  elsif options['help']
+  if options['help']
     puts doc
+  elsif options['pull']
+    PuppetDockerTools::Utilities.pull(options['IMAGE'])
+  elsif options['update-base-images']
+    PuppetDockerTools::Utilities.update_base_images(options['TAG'])
+  else
+    command_runner = PuppetDockerTools::Runner.new(directory: options['DIRECTORY'], repository: options['--repository'], namespace: options['--namespace'], dockerfile: options['--dockerfile'])
+
+    if options['build']
+      command_runner.build(no_cache: options['--no-cache'])
+    elsif options['lint']
+      command_runner.lint
+    elsif options['push']
+      command_runner.push
+    elsif options['rev-labels']
+      command_runner.rev_labels
+    elsif options['spec']
+      command_runner.spec
+    elsif options['test']
+      command_runner.lint
+      command_runner.spec
+    elsif options['version']
+      command_runner.version
+    end
   end
 rescue => e
   puts "ERROR:\n\t#{e}"
