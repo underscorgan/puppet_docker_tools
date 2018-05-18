@@ -46,7 +46,7 @@ class PuppetDockerTools
     #
     # @param directory
     def lint(directory)
-      hadolint_container = 'lukasmartinelli/hadolint'
+      hadolint_container = 'hadolint/hadolint'
       # make sure we have the container locally
       PuppetDockerTools::Run.pull("#{hadolint_container}:latest")
       container = Docker::Container.create('Cmd' => ['/bin/sh', '-c', "hadolint --ignore DL3008 --ignore DL4000 --ignore DL4001 - "], 'Image' => hadolint_container, 'OpenStdin' => true, 'StdinOnce' => true)
