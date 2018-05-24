@@ -155,9 +155,10 @@ HERE
 
   describe '#spec' do
     it "runs tests under the 'spec' directory" do
-      tests=["/tmp/test-image/spec/test1_spec.rb", "/tmp/test-dir/spec/test2_spec.rb"]
+      tests=["/tmp/test-image/spec/test1_spec.rb", "/tmp/test-image/spec/test2_spec.rb"]
       expect(Dir).to receive(:glob).with("/tmp/test-image/spec/*_spec.rb").and_return(tests)
-      expect(RSpec::Core::Runner).to receive(:run).with(tests, $stderr, $stdout).and_return(nil)
+      expect(Open3).to receive(:popen2e).with('rspec spec /tmp/test-image/spec/test1_spec.rb')
+      expect(Open3).to receive(:popen2e).with('rspec spec /tmp/test-image/spec/test2_spec.rb')
       runner.spec
     end
   end
