@@ -125,7 +125,18 @@ class PuppetDockerTools
       test_files = tests.map { |test| File.basename(test, '.rb') }
 
       puts "Running RSpec tests from #{File.expand_path("#{directory}/spec")} (#{test_files.join ","}), this may take some time"
-      RSpec::Core::Runner.run(tests, $stderr, $stdout)
+      success = true
+      tests.each do |test|
+        Open3.popen2e("rspec spec #{test}") do |stdin, output_stream, wait_thread|
+          while line = output_stream.gets
+            puts line
+          end
+          exit_status = wait_thread.value.exitstatus
+          success = success && (exit_status == 0)
+        end
+      end
+
+      fail "Running RSpec tests for #{directory} failed!" unless success
     end
 
     # Get the version set in the Dockerfile in the specified directory
