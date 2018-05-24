@@ -3,7 +3,7 @@ require 'docker'
 require 'rspec/core'
 require 'time'
 require 'puppet_docker_tools/utilities'
-require File.expand_path(File.join(File.dirname(__FILE__), "..", "..", "spec", 'spec_helper.rb'))
+require 'puppet_docker_tools/spec_helper'
 
 class PuppetDockerTools
   class Runner
