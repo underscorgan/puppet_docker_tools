@@ -44,6 +44,7 @@ Build a docker image based on the dockerfile in DIRECTORY.
 
 Run [hadolint](https://github.com/hadolint/hadolint) on the dockerfile in DIRECTORY. The lint task runs on the `hadolint/hadolint` container with the following rule exclusions:
 * [DL3008](https://github.com/hadolint/hadolint/wiki/DL3008) - Pin versions in apt get install
+* [DL3018](https://github.com/hadolint/hadolint/wiki/DL3018) - Pin versions in apk install
 * [DL4000](https://github.com/hadolint/hadolint/wiki/DL4000) - MAINTAINER is deprecated
 * [DL4001](https://github.com/hadolint/hadolint/wiki/DL4001) - Don't use both wget and curl
 
