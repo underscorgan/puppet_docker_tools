@@ -72,10 +72,11 @@ class PuppetDockerTools
       begin
         # make sure we have the container locally
         PuppetDockerTools::Utilities.pull("#{hadolint_container}:latest")
-        container = Docker::Container.create('Cmd' => ['/bin/sh', '-c', "hadolint #{ignore_string} - "], 'Image' => hadolint_container, 'OpenStdin' => true, 'StdinOnce' => true)
+        container = Docker::Container.create('Cmd' => ['/bin/sh', '-c', "hadolint #{ignore_string} #{dockerfile}"], 'Image' => hadolint_container, 'Binds' => ["#{directory}/#{dockerfile}:/#{dockerfile}"])
         # This container.tap startes the container created above, and passes directory/Dockerfile to the container
-        container.tap(&:start).attach(stdin: "#{directory}/#{dockerfile}")
+        #container.tap(&:start).attach(stdin: "#{directory}/#{dockerfile}")
         # Wait for the run to finish
+        container.run
         container.wait
         exit_status = container.json['State']['ExitCode']
         unless exit_status == 0
