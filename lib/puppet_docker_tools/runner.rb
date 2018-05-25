@@ -71,13 +71,13 @@ class PuppetDockerTools
 
       # make sure we have the container locally
       PuppetDockerTools::Utilities.pull("#{hadolint_container}:latest")
-      container = Docker::Container.create('Cmd' => ['/bin/sh', '-c', "hadolint #{ignore_string} #{dockerfile}"], 'Image' => hadolint_container, 'Binds' => ["#{File.expand_path("#{directory}/#{dockerfile}")}:/#{dockerfile}"])
+      container = Docker::Container.create('Cmd' => ['/bin/sh', '-c', "hadolint #{ignore_string} /#{dockerfile}"], 'Image' => hadolint_container, 'Binds' => ["#{File.expand_path("#{directory}/#{dockerfile}")}:/#{dockerfile}"])
       container.start
       # Wait for the run to finish
       container.wait
       exit_status = container.json['State']['ExitCode']
       unless exit_status == 0
-        puts "Exit status wasn't zero!!\n\n#{container.logs(stdout: true, stderr: true)}"
+        fail container.logs(stdout: true, stderr: true)
       end
 
     end
