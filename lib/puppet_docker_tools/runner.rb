@@ -66,17 +66,23 @@ class PuppetDockerTools
       ]
       ignore_string = ignore_rules.map { |x| "--ignore #{x}" }.join(' ')
 
-      # make sure we have the container locally
-      PuppetDockerTools::Utilities.pull("#{hadolint_container}:latest")
-      container = Docker::Container.create('Cmd' => ['/bin/sh', '-c', "hadolint #{ignore_string} - "], 'Image' => hadolint_container, 'OpenStdin' => true, 'StdinOnce' => true)
-      # This container.tap startes the container created above, and passes directory/Dockerfile to the container
-      container.tap(&:start).attach(stdin: "#{directory}/#{dockerfile}")
-      # Wait for the run to finish
-      container.wait
-      exit_status = container.json['State']['ExitCode']
-      unless exit_status == 0
-        puts "Exit status wasn't zero, trying something else!\n\n#{container.logs(stdout: true, stderr: true)}"
+      exit_status = 0
+      popen_exit_status = 0
 
+      begin
+        # make sure we have the container locally
+        PuppetDockerTools::Utilities.pull("#{hadolint_container}:latest")
+        container = Docker::Container.create('Cmd' => ['/bin/sh', '-c', "hadolint #{ignore_string} - "], 'Image' => hadolint_container, 'OpenStdin' => true, 'StdinOnce' => true)
+        # This container.tap startes the container created above, and passes directory/Dockerfile to the container
+        container.tap(&:start).attach(stdin: "#{directory}/#{dockerfile}")
+        # Wait for the run to finish
+        container.wait
+        exit_status = container.json['State']['ExitCode']
+        unless exit_status == 0
+          puts "Exit status wasn't zero!!\n\n#{container.logs(stdout: true, stderr: true)}"
+        end
+      rescue => e
+        puts "rescued #{e}"
         Open3.popen2e("docker run --rm -i hadolint/hadolint hadolint #{ignore_string} - < #{directory}/#{dockerfile}") do |stdin, output_stream, wait_thread|
           while line = output_stream.gets
             puts line
@@ -85,11 +91,10 @@ class PuppetDockerTools
           if popen_exit_status == 0
             puts "SUCCESS, HORRAY"
           end
-          if exit_status != popen_exit_status
-            fail "uh oh, something's weird"
-          end
         end
       end
+
+      fail "something went wrong with the linting" if exit_status | popen_exit_status != 0
     end
 
     # Push an image to hub.docker.com
