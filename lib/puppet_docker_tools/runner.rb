@@ -15,6 +15,12 @@ class PuppetDockerTools
       @namespace = namespace
       @dockerfile = dockerfile
 
+      begin
+        Docker.validate_version!
+      rescue => e
+        fail "OH NO, validate_version failed, can't use the gem\n\n#{e}"
+      end
+
       file = "#{directory}/#{dockerfile}"
       fail "File #{file} doesn't exist!" unless File.exist? file
     end
