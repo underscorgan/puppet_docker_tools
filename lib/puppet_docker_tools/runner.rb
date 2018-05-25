@@ -75,7 +75,20 @@ class PuppetDockerTools
       container.wait
       exit_status = container.json['State']['ExitCode']
       unless exit_status == 0
-        fail container.logs(stdout: true, stderr: true)
+        puts "Exit status wasn't zero, trying something else!\n\n#{container.logs(stdout: true, stderr: true)}"
+
+        Open3.popen2e("docker run --rm -i hadolint/hadolint hadolint #{ignore_string} - < #{directory}/#{dockerfile}") do |stdin, output_stream, wait_thread|
+          while line = output_stream.gets
+            puts line
+          end
+          popen_exit_status = wait_thread.value.exitstatus
+          if popen_exit_status == 0
+            puts "SUCCESS, HORRAY"
+          end
+          if exit_status != popen_exit_status
+            fail "uh oh, something's weird"
+          end
+        end
       end
     end
 
