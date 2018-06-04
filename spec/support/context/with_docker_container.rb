@@ -1,7 +1,7 @@
 shared_context 'with a docker container' do
   before(:all) do
     @container = Docker::Container.create('Image' => @image.id)
-    @container.start
+#    @container.start
   end
 
   after(:all) do
