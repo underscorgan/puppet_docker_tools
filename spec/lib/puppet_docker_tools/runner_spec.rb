@@ -86,6 +86,13 @@ describe PuppetDockerTools::Runner do
     end
   end
 
+  describe '#local_lint' do
+    it "should fail with logs if linting fails" do
+      allow(Open3).to receive(:capture2e).with(PuppetDockerTools::Utilities.get_hadolint_command('/tmp/test-image/Dockerfile')).and_return('container logs', 1)
+      expect { runner.local_lint }.to raise_error(RuntimeError, /container logs/)
+    end
+  end
+
   describe '#push' do
     it 'should fail if no version is set' do
       expect(PuppetDockerTools::Utilities).to receive(:get_value_from_label).and_return(nil)

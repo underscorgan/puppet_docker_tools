@@ -195,4 +195,13 @@ HERE
     end
   end
 
+  describe '#get_hadolint_command' do
+    it 'generates a commmand with a dockerfile' do
+      expect(PuppetDockerTools::Utilities.get_hadolint_command('test/Dockerfile')).to eq('hadolint --ignore DL3008 --ignore DL3018 --ignore DL4000 --ignore DL4001 test/Dockerfile')
+    end
+
+    it 'defaults to generating a command that reads from stdin' do
+      expect(PuppetDockerTools::Utilities.get_hadolint_command).to eq('hadolint --ignore DL3008 --ignore DL3018 --ignore DL4000 --ignore DL4001 -')
+    end
+  end
 end
