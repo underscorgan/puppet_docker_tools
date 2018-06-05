@@ -15,6 +15,7 @@ $ puppet-docker help
 Usage:
   puppet-docker build [DIRECTORY] [--dockerfile=<dockerfile>] [--repository=<repo>] [--namespace=<namespace>] [--no-cache]
   puppet-docker lint [DIRECTORY] [--dockerfile=<dockerfile>]
+  puppet-docker local-lint [DIRECTORY] [--dockerfile=<dockerfile>]
   puppet-docker pull [IMAGE] [--repository=<repo>]
   puppet-docker push [DIRECTORY] [--dockerfile=<dockerfile>] [--repository=<repo>] [--namespace=<namespace>]
   puppet-docker rev-labels [DIRECTORY] [--dockerfile=<dockerfile>] [--namespace=<namespace>]
@@ -47,6 +48,10 @@ Run [hadolint](https://github.com/hadolint/hadolint) on the dockerfile in DIRECT
 * [DL3018](https://github.com/hadolint/hadolint/wiki/DL3018) - Pin versions in apk install
 * [DL4000](https://github.com/hadolint/hadolint/wiki/DL4000) - MAINTAINER is deprecated
 * [DL4001](https://github.com/hadolint/hadolint/wiki/DL4001) - Don't use both wget and curl
+
+### `puppet-docker local-lint`
+
+Run [hadolint](https://github.com/hadolint/hadolint) on the dockerfile in DIRECTORY. The lint task runs using a locally installed `hadolint` executable with the same rule exclusions as `puppet-docker lint`.
 
 ### `puppet-docker pull`
 

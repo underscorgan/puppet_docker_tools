@@ -126,6 +126,23 @@ class PuppetDockerTools
       end
     end
 
+    # Generate the hadolint command that should be run. Hadolint is a
+    # linter for dockerfiles that also validates inline bash with shellcheck.
+    # For more info, see the github repo (https://github.com/hadolint/hadolint)
+    #
+    # @param file Dockerfile to lint, defaults to stdin
+    def get_hadolint_command(file = '-')
+      ignore_rules = [
+        'DL3008',
+        'DL3018',
+        'DL4000',
+        'DL4001',
+      ]
+      ignore_string = ignore_rules.map { |x| "--ignore #{x}" }.join(' ')
+
+      "hadolint #{ignore_string} #{file}"
+    end
+
     # Get a value from a Dockerfile
     #
     # @param key The key to read from the Dockerfile, e.g. 'from'

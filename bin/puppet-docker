@@ -9,6 +9,7 @@ Utilities for building and releasing Puppet docker images.
 Usage:
   puppet-docker build [DIRECTORY] [--dockerfile=<dockerfile>] [--repository=<repo>] [--namespace=<namespace>] [--no-cache]
   puppet-docker lint [DIRECTORY] [--dockerfile=<dockerfile>]
+  puppet-docker local-lint [DIRECTORY] [--dockerfile=<dockerfile>]
   puppet-docker pull [IMAGE] [--repository=<repo>]
   puppet-docker push [DIRECTORY] [--dockerfile=<dockerfile>] [--repository=<repo>] [--namespace=<namespace>]
   puppet-docker rev-labels [DIRECTORY] [--dockerfile=<dockerfile>] [--namespace=<namespace>]
@@ -71,6 +72,8 @@ begin
       command_runner.build(no_cache: options['--no-cache'])
     elsif options['lint']
       command_runner.lint
+    elsif options['local-lint']
+      command_runner.local_lint
     elsif options['push']
       command_runner.push
     elsif options['rev-labels']

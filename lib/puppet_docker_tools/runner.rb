@@ -46,23 +46,16 @@ class PuppetDockerTools
       end
     end
 
-    # Run hadolint on the Dockerfile in the specified directory. Hadolint is a
-    # linter for dockerfiles that also validates inline bash with shellcheck.
-    # For more info, see the github repo (https://github.com/hadolint/hadolint)
+    # Run hadolint on the Dockerfile in the specified directory. This will run
+    # hadolint inside of a container. To run a locally-installed hadolint binary
+    # see local_lint.
     #
     def lint
       hadolint_container = 'hadolint/hadolint'
-      ignore_rules = [
-        'DL3008',
-        'DL3018',
-        'DL4000',
-        'DL4001',
-      ]
-      ignore_string = ignore_rules.map { |x| "--ignore #{x}" }.join(' ')
 
       # make sure we have the container locally
       PuppetDockerTools::Utilities.pull("#{hadolint_container}:latest")
-      container = Docker::Container.create('Cmd' => ['/bin/sh', '-c', "hadolint #{ignore_string} - "], 'Image' => hadolint_container, 'OpenStdin' => true, 'StdinOnce' => true)
+      container = Docker::Container.create('Cmd' => ['/bin/sh', '-c', "#{PuppetDockerTools::Utilities.get_hadolint_command}"], 'Image' => hadolint_container, 'OpenStdin' => true, 'StdinOnce' => true)
       # This container.tap startes the container created above, and passes directory/Dockerfile to the container
       container.tap(&:start).attach(stdin: "#{directory}/#{dockerfile}")
       # Wait for the run to finish
@@ -71,6 +64,13 @@ class PuppetDockerTools
       unless exit_status == 0
         fail container.logs(stdout: true, stderr: true)
       end
+    end
+
+    # Run hadolint Dockerfile linting using a local hadolint executable. Executable
+    # found based on your path.
+    def local_lint
+      output, status = Open3.capture2e(PuppetDockerTools::Utilities.get_hadolint_command("#{directory}/#{dockerfile}"))
+      fail output unless status == 0
     end
 
     # Push an image to hub.docker.com
