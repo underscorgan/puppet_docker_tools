@@ -1,5 +1,6 @@
 require 'date'
 require 'docker'
+require 'json'
 require 'rspec/core'
 require 'time'
 require 'puppet_docker_tools/utilities'
@@ -29,8 +30,14 @@ class PuppetDockerTools
       path = "#{repository}/#{image_name}"
       puts "Building #{path}:latest"
 
+      build_args = {
+        'vcs_ref' => PuppetDockerTools::Utilities.current_git_sha(directory),
+        'build_date' => Time.now.utc.iso8601
+      }
+
       # 't' in the build_options sets the tag for the image we're building
-      build_options = { 't' => "#{path}:latest", 'dockerfile' => dockerfile }
+      build_options = { 't' => "#{path}:latest", 'dockerfile' => dockerfile, 'buildargs' => "#{build_args.to_json}"}
+
       if no_cache
         puts "Ignoring cache for #{path}"
         build_options['nocache'] = true
@@ -40,8 +47,7 @@ class PuppetDockerTools
       if version
         puts "Building #{path}:#{version}"
 
-        # 't' in the build_options sets the tag for the image we're building
-        build_options = { 't' => "#{path}:#{version}", 'dockerfile' => dockerfile }
+        build_options['t'] = "#{path}:#{version}"
         Docker::Image.build_from_dir(directory, build_options)
       end
     end

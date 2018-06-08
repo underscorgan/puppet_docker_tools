@@ -81,6 +81,15 @@ Output the `version` label for the dockerfile contained in DIRECTORY.
 
 Update the base images. Any number of tags to update can be passed, or by default it will pull the latest version of: ['ubuntu:16.04', 'centos:7', 'alpine:3.4', 'debian:9', 'postgres:9.6.8']
 
+## Items available to Dockerfiles
+
+There are some common variables passed to builds that you can take advantage of in your Dockerfiles.
+
+### `ARG`s
+
+* `vcs_ref`: set to `git rev-parse HEAD`
+* `build_date`: set to ruby's `Time.now.utc.iso8601`
+
 ## Issues
 
 File issues in the [Community Package Repository (CPR) project](https://tickets.puppet.com/browse/CPR) with the 'Container' component.

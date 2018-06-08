@@ -5,10 +5,13 @@ require 'docker'
 describe PuppetDockerTools::Runner do
   def create_runner(directory:, repository:, namespace:, dockerfile:)
     allow(File).to receive(:exist?).with("#{directory}/#{dockerfile}").and_return(true)
+    allow(Dir).to receive(:chdir).with(directory).and_return('b0c5ead01b6cabdb3f01871bce699be165c3288f')
+    allow(Time).to receive(:now).and_return(Time.at(1528478293))
     PuppetDockerTools::Runner.new(directory: directory, repository: repository, namespace: namespace, dockerfile: dockerfile)
   end
 
   let(:runner) { create_runner(directory: '/tmp/test-image', repository: 'test', namespace: 'org.label-schema', dockerfile: 'Dockerfile') }
+  let(:buildargs) {{ 'vcs_ref' => 'b0c5ead01b6cabdb3f01871bce699be165c3288f', 'build_date' => '2018-06-08T17:18:13Z' }.to_json}
 
   describe '#initialize' do
     it "should fail if the dockerfile doesn't exist" do
@@ -22,27 +25,27 @@ describe PuppetDockerTools::Runner do
 
     it 'builds a latest and version tag if version is found' do
       expect(PuppetDockerTools::Utilities).to receive(:get_value_from_env).with('version', namespace: runner.namespace, directory: runner.directory, dockerfile: runner.dockerfile).and_return('1.2.3')
-      expect(Docker::Image).to receive(:build_from_dir).with(runner.directory, { 't' => 'test/test-image:1.2.3', 'dockerfile' => runner.dockerfile }).and_return(image)
-      expect(Docker::Image).to receive(:build_from_dir).with(runner.directory, { 't' => 'test/test-image:latest', 'dockerfile' => runner.dockerfile }).and_return(image)
+      expect(Docker::Image).to receive(:build_from_dir).with(runner.directory, { 't' => 'test/test-image:1.2.3', 'dockerfile' => runner.dockerfile, 'buildargs' => buildargs }).and_return(image)
+      expect(Docker::Image).to receive(:build_from_dir).with(runner.directory, { 't' => 'test/test-image:latest', 'dockerfile' => runner.dockerfile, 'buildargs' => buildargs }).and_return(image)
       runner.build
     end
 
     it 'builds just a latest tag if no version is found' do
       expect(PuppetDockerTools::Utilities).to receive(:get_value_from_env).with('version', namespace: runner.namespace, directory: runner.directory, dockerfile: runner.dockerfile).and_return(nil)
-      expect(Docker::Image).to receive(:build_from_dir).with(runner.directory, { 't' => 'test/test-image:latest', 'dockerfile' => runner.dockerfile }).and_return(image)
+      expect(Docker::Image).to receive(:build_from_dir).with(runner.directory, { 't' => 'test/test-image:latest', 'dockerfile' => runner.dockerfile, 'buildargs' => buildargs }).and_return(image)
       runner.build
     end
 
     it 'ignores the cache when that parameter is set' do
       expect(PuppetDockerTools::Utilities).to receive(:get_value_from_env).with('version', namespace: runner.namespace, directory: runner.directory, dockerfile: runner.dockerfile).and_return(nil)
-      expect(Docker::Image).to receive(:build_from_dir).with(runner.directory, { 't' => 'test/test-image:latest', 'nocache' => true, 'dockerfile' => runner.dockerfile }).and_return(image)
+      expect(Docker::Image).to receive(:build_from_dir).with(runner.directory, { 't' => 'test/test-image:latest', 'nocache' => true, 'dockerfile' => runner.dockerfile, 'buildargs' => buildargs }).and_return(image)
       runner.build(no_cache: true)
     end
 
     it 'uses a custom dockerfile if passed' do
       allow(File).to receive(:exist?).with('/tmp/test-image/Dockerfile.test').and_return(true)
       expect(PuppetDockerTools::Utilities).to receive(:get_value_from_env).with('version', namespace: 'org.label-schema', directory: '/tmp/test-image', dockerfile: 'Dockerfile.test').and_return(nil)
-      expect(Docker::Image).to receive(:build_from_dir).with('/tmp/test-image', { 't' => 'test/test-image:latest', 'dockerfile' => 'Dockerfile.test' }).and_return(image)
+      expect(Docker::Image).to receive(:build_from_dir).with('/tmp/test-image', { 't' => 'test/test-image:latest', 'dockerfile' => 'Dockerfile.test', 'buildargs' => buildargs }).and_return(image)
       local_runner = create_runner(directory: '/tmp/test-image', repository: 'test', namespace: 'org.label-schema', dockerfile: 'Dockerfile.test')
       local_runner.build
     end
