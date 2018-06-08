@@ -40,8 +40,7 @@ class PuppetDockerTools
       if version
         puts "Building #{path}:#{version}"
 
-        # 't' in the build_options sets the tag for the image we're building
-        build_options = { 't' => "#{path}:#{version}", 'dockerfile' => dockerfile }
+        build_options['t'] = "#{path}:#{version}"
         Docker::Image.build_from_dir(directory, build_options)
       end
     end
