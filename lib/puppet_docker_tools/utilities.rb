@@ -26,6 +26,25 @@ class PuppetDockerTools
       end
     end
 
+    # parse build args into a hash for easier manipulation
+    #
+    # @param build_args array of build_args with each entry in the format 'arg=value'
+    def parse_build_args(build_args)
+      args_hash = {}
+
+      build_args.each do |arg|
+        fields = arg.split('=')
+        key = fields.first
+        # get rid of the key from the fields so we can get the value
+        fields.shift
+        # join the remaining fields with '=' in case the value had '=' in it
+        value = fields.join('=')
+        args_hash[key] = value
+      end
+
+      args_hash
+    end
+
     # Get a value from the labels on a docker image
     #
     # @param image The docker image you want to get a value from, e.g. 'puppet/puppetserver'

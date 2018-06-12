@@ -24,24 +24,31 @@ class PuppetDockerTools
     #
     # @param no_cache Whether or not to use existing layer caches when building
     #        this image. Defaults to using the cache (no_cache = false).
-    def build(no_cache: false)
+    def build(no_cache: false, version: nil, build_args: [])
       image_name = File.basename(directory)
-      version = PuppetDockerTools::Utilities.get_value_from_env('version', namespace: namespace, directory: directory, dockerfile: dockerfile)
-      path = "#{repository}/#{image_name}"
-      puts "Building #{path}:latest"
-
-      build_args = {
+      build_args_hash = {
         'vcs_ref' => PuppetDockerTools::Utilities.current_git_sha(directory),
         'build_date' => Time.now.utc.iso8601
       }
 
+      build_args_hash['version'] = version unless version.nil?
+
+      if Array(build_args).any?
+        build_args_hash.merge!(PuppetDockerTools::Utilities.parse_build_args(Array(build_args)))
+      end
+
+      version = build_args_hash['version'] || PuppetDockerTools::Utilities.get_value_from_env('version', namespace: namespace, directory: directory, dockerfile: dockerfile)
+      path = "#{repository}/#{image_name}"
+      puts "Building #{path}:latest"
+
       # 't' in the build_options sets the tag for the image we're building
-      build_options = { 't' => "#{path}:latest", 'dockerfile' => dockerfile, 'buildargs' => "#{build_args.to_json}"}
+      build_options = { 't' => "#{path}:latest", 'dockerfile' => dockerfile, 'buildargs' => "#{build_args_hash.to_json}"}
 
       if no_cache
         puts "Ignoring cache for #{path}"
         build_options['nocache'] = true
       end
+
       Docker::Image.build_from_dir(directory, build_options)
 
       if version
