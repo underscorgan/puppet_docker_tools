@@ -24,6 +24,11 @@ class PuppetDockerTools
     #
     # @param no_cache Whether or not to use existing layer caches when building
     #        this image. Defaults to using the cache (no_cache = false).
+    # @param version Set the version for the container explicitly. Will get
+    #        passed as the 'version' buildarg.
+    # @param build_args Pass arbitrary buildargs to the container build.
+    #        Expected to be an array of strings, each string formatted like
+    #        'arg=value'.
     def build(no_cache: false, version: nil, build_args: [])
       image_name = File.basename(directory)
       build_args_hash = {
@@ -31,13 +36,27 @@ class PuppetDockerTools
         'build_date' => Time.now.utc.iso8601
       }
 
+      # if version is passed in, add that into the build_args hash
+      # **NOTE** if both `version` and `build_args` includes `version=something`
+      #          the value in `build_args` takes precedence
       build_args_hash['version'] = version unless version.nil?
 
+      # Convert the build_args array to a hash, and merge it with the values
+      # that have already been set
       if Array(build_args).any?
         build_args_hash.merge!(PuppetDockerTools::Utilities.parse_build_args(Array(build_args)))
       end
 
+      # This variable is meant to be used for building the non-latest tagged build
+      # If the version was set via `version` or `build_args`, use that. If not,
+      # use `get_value_from_env` to parse that value from the dockerfile.
+      #
+      # If version hasn't been passed in via `version` or `build_args` there's
+      # no need to add the version from `get_value_from_env` to the
+      # build_args_hash, dockerfiles should not be using both hardcoded versions
+      # and versions passed in to the dockerfile with an `ARG`
       version = build_args_hash['version'] || PuppetDockerTools::Utilities.get_value_from_env('version', namespace: namespace, directory: directory, dockerfile: dockerfile)
+
       path = "#{repository}/#{image_name}"
       puts "Building #{path}:latest"
 
