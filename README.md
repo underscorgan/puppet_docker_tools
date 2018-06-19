@@ -12,8 +12,10 @@ You also need to have docker installed and running. See [these docs](https://doc
 
 ```
 $ puppet-docker help
+Utilities for building and releasing Puppet docker images.
+
 Usage:
-  puppet-docker build [DIRECTORY] [--dockerfile=<dockerfile>] [--repository=<repo>] [--namespace=<namespace>] [--no-cache]
+  puppet-docker build [DIRECTORY] [--dockerfile=<dockerfile>] [--repository=<repo>] [--namespace=<namespace>] [--no-cache] [--version=<version] [--build-arg=<buildarg> ...]
   puppet-docker lint [DIRECTORY] [--dockerfile=<dockerfile>]
   puppet-docker local-lint [DIRECTORY] [--dockerfile=<dockerfile>]
   puppet-docker pull [IMAGE] [--repository=<repo>]
@@ -35,6 +37,9 @@ Options:
   --no-cache                 Disable use of layer cache when building this image. Defaults to using the cache.
   --namespace=<namespace>    Namespace for labels on the container [default: org.label-schema]
   --dockerfile=<dockerfile>  File name for your dockerfile [default: Dockerfile]
+  --version=<version>        Version to build. This field will be used to determine the label and will be passed as the version build arg.
+                             **NOTE** `--build-arg version='<version>'` overrides `--version <version>`
+  --build-arg=<buildarg>     Build arg to pass to container build, can be passed multiple times.
 ```
 
 ### `puppet-docker build`

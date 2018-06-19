@@ -204,4 +204,22 @@ HERE
       expect(PuppetDockerTools::Utilities.get_hadolint_command).to eq('hadolint --ignore DL3008 --ignore DL3018 --ignore DL4000 --ignore DL4001 -')
     end
   end
+
+  describe '#parse_build_args' do
+    let(:build_args) {
+      [
+        'foo=bar',
+        'test=a=string=with==equals'
+      ]
+    }
+    let(:build_args_hash) {
+      {
+        'foo' => 'bar',
+        'test' => 'a=string=with==equals'
+      }
+    }
+    it 'converts the array to a hash' do
+      expect(PuppetDockerTools::Utilities.parse_build_args(build_args)).to eq(build_args_hash)
+    end
+  end
 end
