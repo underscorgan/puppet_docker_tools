@@ -71,7 +71,12 @@ class PuppetDockerTools
 
       value = text.scan(/#{Regexp.escape(namespace)}\.(.+)=(.+) \\?/).to_h[label]
       # expand out environment variables
-      value = get_value_from_variable(value, directory: directory, dockerfile: dockerfile, dockerfile_contents: text) if value.start_with?('$')
+      # This supports either label=$variable or label="$variable"
+      if value.start_with?('$') || value.start_with?('"$')
+        # if variable is quoted, get rid of leading and trailing quotes
+        value.gsub!(/\A"|"\Z/, '')
+        value = get_value_from_variable(value, directory: directory, dockerfile: dockerfile, dockerfile_contents: text)
+      end
       # check in higher-level image if we didn't find it defined in this docker file
       value = get_value_from_base_image(label, namespace: namespace, directory: directory, dockerfile: dockerfile) if value.nil?
       # This gets rid of leading or trailing quotes
