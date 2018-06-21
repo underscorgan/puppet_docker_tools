@@ -5,6 +5,16 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 This changelog adheres to [Keep a CHANGELOG](http://keepachangelog.com/).
 
 ## [Unreleased]
+## [0.1.3] - released 2018-06-21
+### Added
+- (CPR-584) Add support for passing version and arbitrary buildargs at container
+  build time
+
+### Fixed
+- The `get_value_from_env` method was not properly interpolating environment
+  variables if they were quoted in the label. We now support either
+  `label=$variable` or `label="$variable"`
+
 ## [0.1.2] - released 2018-06-12
 ### Added
 - Generate build-date and vcs-ref at build time and pass those on to the image
@@ -28,7 +38,8 @@ This changelog adheres to [Keep a CHANGELOG](http://keepachangelog.com/).
 ### Added
 - Initial port of the automation from [puppet-in-docker](https://github.com/puppetlabs/puppet-in-docker)
 
-[Unreleased]: https://github.com/puppetlabs/puppet_docker_tools/compare/0.1.2...HEAD
+[Unreleased]: https://github.com/puppetlabs/puppet_docker_tools/compare/0.1.3...HEAD
+[0.1.3]: https://github.com/puppetlabs/puppet_docker_tools/compare/0.1.2...0.1.3
 [0.1.2]: https://github.com/puppetlabs/puppet_docker_tools/compare/0.1.1...0.1.2
 [0.1.1]: https://github.com/puppetlabs/puppet_docker_tools/compare/0.1.0...0.1.1
 [0.1.0]: https://github.com/puppetlabs/puppet_docker_tools/compare/0.0.0...0.1.0
