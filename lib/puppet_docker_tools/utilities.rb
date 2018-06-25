@@ -45,6 +45,24 @@ class PuppetDockerTools
       args_hash
     end
 
+    # Filter build args to only include ARGs listed in the dockerfile. This is
+    # meant for compatibility with old versions of docker.
+    #
+    # @param build_args hash of build args to filter
+    # @param dockerfile the dockerfile to look for ARGs in
+    def filter_build_args(build_args: , dockerfile: )
+      fail "File #{dockerfile} doesn't exist!" unless File.exist? dockerfile
+      text = File.read(dockerfile)
+
+      # Docker only supports passing a single ARG on each line, so
+      # look for arg, and ignore any default settings since we only care
+      # whether or not the key is available
+      implemented_args = text.scan(/arg +([^\n=]+)/i).flatten
+
+      # reject any entries for args that are not in the dockerfile
+      build_args.reject { |k,v| ! implemented_args.include?(k) }
+    end
+
     # Get a value from the labels on a docker image
     #
     # @param image The docker image you want to get a value from, e.g. 'puppet/puppetserver'

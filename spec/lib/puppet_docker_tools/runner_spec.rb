@@ -14,6 +14,15 @@ describe PuppetDockerTools::Runner do
   let(:buildargs) {{ 'vcs_ref' => 'b0c5ead01b6cabdb3f01871bce699be165c3288f', 'build_date' => '2018-06-08T17:18:13Z' }.to_json}
   let(:buildargs_with_version) {{ 'vcs_ref' => 'b0c5ead01b6cabdb3f01871bce699be165c3288f', 'build_date' => '2018-06-08T17:18:13Z', 'version' => '1.2.3' }.to_json}
   let(:extra_buildargs) {{ 'vcs_ref' => 'b0c5ead01b6cabdb3f01871bce699be165c3288f', 'build_date' => '2018-06-08T17:18:13Z', 'foo' => 'bar', 'baz' => 'test=with=equals' }.to_json}
+  let(:read_dockerfile) {
+    "FROM ubuntu:16.04\n\nARG vcs_ref\nARG build_date"
+  }
+  let(:read_dockerfile_with_version) {
+    "FROM ubuntu:16.04\n\nARG version\nARG vcs_ref\nARG build_date"
+  }
+  let(:read_dockerfile_with_arbitrary_args) {
+    "FROM ubuntu:16.04\n\nARG foo\nARG baz\nARG vcs_ref\nARG build_date"
+  }
 
   describe '#initialize' do
     it "should fail if the dockerfile doesn't exist" do
@@ -26,6 +35,7 @@ describe PuppetDockerTools::Runner do
     let(:image) { double(Docker::Image) }
 
     it 'builds a latest and version tag if version is found' do
+      expect(File).to receive(:read).with("#{runner.directory}/#{runner.dockerfile}").and_return(read_dockerfile)
       expect(PuppetDockerTools::Utilities).to receive(:get_value_from_env).with('version', namespace: runner.namespace, directory: runner.directory, dockerfile: runner.dockerfile).and_return('1.2.3')
       expect(Docker::Image).to receive(:build_from_dir).with(runner.directory, { 't' => 'test/test-image:1.2.3', 'dockerfile' => runner.dockerfile, 'buildargs' => buildargs }).and_return(image)
       expect(Docker::Image).to receive(:build_from_dir).with(runner.directory, { 't' => 'test/test-image:latest', 'dockerfile' => runner.dockerfile, 'buildargs' => buildargs }).and_return(image)
@@ -33,36 +43,42 @@ describe PuppetDockerTools::Runner do
     end
 
     it 'builds just a latest tag if no version is found' do
+      expect(File).to receive(:read).with("#{runner.directory}/#{runner.dockerfile}").and_return(read_dockerfile)
       expect(PuppetDockerTools::Utilities).to receive(:get_value_from_env).with('version', namespace: runner.namespace, directory: runner.directory, dockerfile: runner.dockerfile).and_return(nil)
       expect(Docker::Image).to receive(:build_from_dir).with(runner.directory, { 't' => 'test/test-image:latest', 'dockerfile' => runner.dockerfile, 'buildargs' => buildargs }).and_return(image)
       runner.build
     end
 
     it 'does not build a latest tag if latest is set to false' do
+      expect(File).to receive(:read).with("#{runner.directory}/#{runner.dockerfile}").and_return(read_dockerfile)
       expect(PuppetDockerTools::Utilities).to receive(:get_value_from_env).with('version', namespace: runner.namespace, directory: runner.directory, dockerfile: runner.dockerfile).and_return('1.2.3')
       expect(Docker::Image).to receive(:build_from_dir).with(runner.directory, { 't' => 'test/test-image:1.2.3', 'dockerfile' => runner.dockerfile, 'buildargs' => buildargs }).and_return(image)
       runner.build(latest: false)
     end
 
     it 'ignores the cache when that parameter is set' do
+      expect(File).to receive(:read).with("#{runner.directory}/#{runner.dockerfile}").and_return(read_dockerfile)
       expect(PuppetDockerTools::Utilities).to receive(:get_value_from_env).with('version', namespace: runner.namespace, directory: runner.directory, dockerfile: runner.dockerfile).and_return(nil)
       expect(Docker::Image).to receive(:build_from_dir).with(runner.directory, { 't' => 'test/test-image:latest', 'nocache' => true, 'dockerfile' => runner.dockerfile, 'buildargs' => buildargs }).and_return(image)
       runner.build(no_cache: true)
     end
 
     it 'passes the version when that parameter is set' do
+      expect(File).to receive(:read).with("#{runner.directory}/#{runner.dockerfile}").and_return(read_dockerfile_with_version)
       expect(Docker::Image).to receive(:build_from_dir).with(runner.directory, { 't' => 'test/test-image:latest', 'dockerfile' => runner.dockerfile, 'buildargs' => buildargs_with_version }).and_return(image)
       expect(Docker::Image).to receive(:build_from_dir).with(runner.directory, { 't' => 'test/test-image:1.2.3', 'dockerfile' => runner.dockerfile, 'buildargs' => buildargs_with_version }).and_return(image)
       runner.build(version: '1.2.3')
     end
 
     it 'passes arbitrary build args' do
+      expect(File).to receive(:read).with("#{runner.directory}/#{runner.dockerfile}").and_return(read_dockerfile_with_arbitrary_args)
       expect(PuppetDockerTools::Utilities).to receive(:get_value_from_env).with('version', namespace: runner.namespace, directory: runner.directory, dockerfile: runner.dockerfile).and_return(nil)
       expect(Docker::Image).to receive(:build_from_dir).with(runner.directory, { 't' => 'test/test-image:latest', 'dockerfile' => runner.dockerfile, 'buildargs' => extra_buildargs }).and_return(image)
       runner.build(build_args: ['foo=bar', 'baz=test=with=equals'])
     end
 
     it 'prioritizes version as a build arg over regular version' do
+      expect(File).to receive(:read).with("#{runner.directory}/#{runner.dockerfile}").and_return(read_dockerfile_with_version)
       expect(Docker::Image).to receive(:build_from_dir).with(runner.directory, { 't' => 'test/test-image:latest', 'dockerfile' => runner.dockerfile, 'buildargs' => buildargs_with_version }).and_return(image)
       expect(Docker::Image).to receive(:build_from_dir).with(runner.directory, { 't' => 'test/test-image:1.2.3', 'dockerfile' => runner.dockerfile, 'buildargs' => buildargs_with_version }).and_return(image)
       runner.build(version: '1.2.4', build_args: ['version=1.2.3'])
@@ -70,6 +86,7 @@ describe PuppetDockerTools::Runner do
 
     it 'uses a custom dockerfile if passed' do
       allow(File).to receive(:exist?).with('/tmp/test-image/Dockerfile.test').and_return(true)
+      expect(File).to receive(:read).with('/tmp/test-image/Dockerfile.test').and_return(read_dockerfile)
       expect(PuppetDockerTools::Utilities).to receive(:get_value_from_env).with('version', namespace: 'org.label-schema', directory: '/tmp/test-image', dockerfile: 'Dockerfile.test').and_return(nil)
       expect(Docker::Image).to receive(:build_from_dir).with('/tmp/test-image', { 't' => 'test/test-image:latest', 'dockerfile' => 'Dockerfile.test', 'buildargs' => buildargs }).and_return(image)
       local_runner = create_runner(directory: '/tmp/test-image', repository: 'test', namespace: 'org.label-schema', dockerfile: 'Dockerfile.test')
