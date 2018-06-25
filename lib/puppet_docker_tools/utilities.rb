@@ -98,7 +98,7 @@ class PuppetDockerTools
       value = text.scan(/#{Regexp.escape(namespace)}\.(.+)=(.+) \\?/).to_h[label]
       # expand out environment variables
       # This supports either label=$variable or label="$variable"
-      if value.start_with?('$') || value.start_with?('"$')
+      while ! value.nil? && (value.start_with?('$') || value.start_with?('"$'))
         # if variable is quoted, get rid of leading and trailing quotes
         value.gsub!(/\A"|"\Z/, '')
         value = get_value_from_variable(value, directory: directory, dockerfile: dockerfile, dockerfile_contents: text)
@@ -236,7 +236,7 @@ class PuppetDockerTools
       end
       # get rid of the leading $ for the variable
       variable[0] = ''
-      dockerfile_contents[/#{variable}=(["a-zA-Z0-9\.]+)/, 1]
+      dockerfile_contents[/#{variable}=([$"'a-zA-Z0-9\.]+)/, 1]
     end
     private :get_value_from_variable
   end
