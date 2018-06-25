@@ -29,7 +29,9 @@ class PuppetDockerTools
     # @param build_args Pass arbitrary buildargs to the container build.
     #        Expected to be an array of strings, each string formatted like
     #        'arg=value'.
-    def build(no_cache: false, version: nil, build_args: [])
+    # @param latest Whether or not to build the latest tag along with the
+    #        versioned image build.
+    def build(no_cache: false, version: nil, build_args: [], latest: true)
       image_name = File.basename(directory)
       build_args_hash = {
         'vcs_ref' => PuppetDockerTools::Utilities.current_git_sha(directory),
@@ -58,17 +60,22 @@ class PuppetDockerTools
       version = build_args_hash['version'] || PuppetDockerTools::Utilities.get_value_from_env('version', namespace: namespace, directory: directory, dockerfile: dockerfile)
 
       path = "#{repository}/#{image_name}"
-      puts "Building #{path}:latest"
 
-      # 't' in the build_options sets the tag for the image we're building
-      build_options = { 't' => "#{path}:latest", 'dockerfile' => dockerfile, 'buildargs' => "#{build_args_hash.to_json}"}
+      build_options = {'dockerfile' => dockerfile, 'buildargs' => "#{build_args_hash.to_json}"}
 
       if no_cache
         puts "Ignoring cache for #{path}"
         build_options['nocache'] = true
       end
 
-      Docker::Image.build_from_dir(directory, build_options)
+      if latest
+        puts "Building #{path}:latest"
+
+        # 't' in the build_options sets the tag for the image we're building
+        build_options['t'] = "#{path}:latest"
+
+        Docker::Image.build_from_dir(directory, build_options)
+      end
 
       if version
         puts "Building #{path}:#{version}"
@@ -107,12 +114,14 @@ class PuppetDockerTools
 
     # Push an image to hub.docker.com
     #
-    def push
+    # @param latest Whether or not to push the latest tag along with the
+    #        versioned image build.
+    def push(latest: true)
       image_name = File.basename(directory)
       path = "#{repository}/#{image_name}"
       version = PuppetDockerTools::Utilities.get_value_from_label(path, value: 'version', namespace: namespace)
 
-      # We always want to push a versioned label in addition to the latest label
+      # We always want to push a versioned label
       unless version
         fail "No version specified in #{dockerfile} for #{path}"
       end
@@ -123,10 +132,12 @@ class PuppetDockerTools
         fail "Pushing #{path}:#{version} to dockerhub failed!"
       end
 
-      puts "Pushing #{path}:latest to Docker Hub"
-      exitstatus, _ = PuppetDockerTools::Utilities.push_to_dockerhub("#{path}:latest")
-      unless exitstatus == 0
-        fail "Pushing #{path}:latest to dockerhub failed!"
+      if latest
+        puts "Pushing #{path}:latest to Docker Hub"
+        exitstatus, _ = PuppetDockerTools::Utilities.push_to_dockerhub("#{path}:latest")
+        unless exitstatus == 0
+          fail "Pushing #{path}:latest to dockerhub failed!"
+        end
       end
     end
 

@@ -38,6 +38,12 @@ describe PuppetDockerTools::Runner do
       runner.build
     end
 
+    it 'does not build a latest tag if latest is set to false' do
+      expect(PuppetDockerTools::Utilities).to receive(:get_value_from_env).with('version', namespace: runner.namespace, directory: runner.directory, dockerfile: runner.dockerfile).and_return('1.2.3')
+      expect(Docker::Image).to receive(:build_from_dir).with(runner.directory, { 't' => 'test/test-image:1.2.3', 'dockerfile' => runner.dockerfile, 'buildargs' => buildargs }).and_return(image)
+      runner.build(latest: false)
+    end
+
     it 'ignores the cache when that parameter is set' do
       expect(PuppetDockerTools::Utilities).to receive(:get_value_from_env).with('version', namespace: runner.namespace, directory: runner.directory, dockerfile: runner.dockerfile).and_return(nil)
       expect(Docker::Image).to receive(:build_from_dir).with(runner.directory, { 't' => 'test/test-image:latest', 'nocache' => true, 'dockerfile' => runner.dockerfile, 'buildargs' => buildargs }).and_return(image)
@@ -140,6 +146,12 @@ describe PuppetDockerTools::Runner do
       expect(PuppetDockerTools::Utilities).to receive(:push_to_dockerhub).with('test/test-image:1.2.3').and_return([0, nil])
       expect(PuppetDockerTools::Utilities).to receive(:push_to_dockerhub).with('test/test-image:latest').and_return([0, nil])
       runner.push
+    end
+
+    it 'should not push the latest tag if latest is set to false' do
+      expect(PuppetDockerTools::Utilities).to receive(:get_value_from_label).with('test/test-image', value: 'version', namespace: runner.namespace).and_return('1.2.3')
+      expect(PuppetDockerTools::Utilities).to receive(:push_to_dockerhub).with('test/test-image:1.2.3').and_return([0, nil])
+      runner.push(latest: false)
     end
   end
 
