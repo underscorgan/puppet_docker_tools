@@ -234,9 +234,11 @@ class PuppetDockerTools
         fail "File #{file} doesn't exist!" unless File.exist? file
         dockerfile_contents = File.read("#{file}")
       end
+      variable_clone = String.new(variable)
       # get rid of the leading $ for the variable
-      variable[0] = ''
-      dockerfile_contents[/#{variable}=([$"'a-zA-Z0-9\.]+)/, 1]
+      variable_clone[0] = ''
+
+      dockerfile_contents[/#{variable_clone}=([$"'a-zA-Z0-9\.]+)/, 1]
     end
     private :get_value_from_variable
   end
