@@ -60,8 +60,16 @@ class PuppetDockerTools
       implemented_args = text.scan(/arg +([^\n=]+)/i).flatten
 
       # reject any entries for args that are not in the dockerfile
-      build_args.reject { |k,v| ! implemented_args.include?(k) }
+      build_args.reject { |k,v|
+        if implemented_args.include?(k)
+          false
+        else
+          puts "Rejecting `--build-arg #{k}` since that ARG isn't in the Dockerfile"
+          true
+        end
+      }
     end
+
 
     # Get a value from the labels on a docker image
     #
