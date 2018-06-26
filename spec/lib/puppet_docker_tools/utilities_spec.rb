@@ -37,6 +37,31 @@ LABEL maintainer="Puppet Release Team <release@puppet.com>" \\
       com.puppet.dockerfile="/Dockerfile"
 HERE
   }
+  let(:dockerfile_with_args) { <<-HERE
+FROM puppet/puppetserver-standalone:5.3.1
+
+ARG version
+ARG foo
+ARG bar
+HERE
+  }
+
+  let(:build_args) {
+    {
+      'version' => '1.2.3',
+      'foo' => 'test',
+      'bar' => 'baz',
+      'test' => 'test2',
+    }
+  }
+
+  let(:filtered_build_args) {
+    {
+      'version' => '1.2.3',
+      'foo' => 'test',
+      'bar' => 'baz',
+    }
+  }
 
   let(:config_labels) { {
     'Config' => {
@@ -48,6 +73,20 @@ HERE
     }
   }
   }
+
+  describe "#filter_build_args" do
+    it "should fail if the dockerfile doesn't exist" do
+      allow(File).to receive(:exist?).with("/tmp/test-dir/#{dockerfile}").and_return(false)
+      expect { PuppetDockerTools::Utilities.filter_build_args(build_args: build_args, dockerfile: "/tmp/test-dir/#{dockerfile}") }.to raise_error(RuntimeError, /doesn't exist/)
+    end
+
+    it "should filter out any buildargs not in the dockerfile" do
+      allow(File).to receive(:exist?).with("/tmp/test-dir/#{dockerfile}").and_return(true)
+      allow(File).to receive(:read).with("/tmp/test-dir/#{dockerfile}").and_return(dockerfile_with_args)
+      expect(PuppetDockerTools::Utilities.filter_build_args(build_args: build_args, dockerfile: "/tmp/test-dir/#{dockerfile}")).to eq(filtered_build_args)
+    end
+
+  end
 
   describe "#get_value_from_label" do
     let(:image) { double(Docker::Image).as_null_object }

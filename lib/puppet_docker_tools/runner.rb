@@ -49,6 +49,8 @@ class PuppetDockerTools
         build_args_hash.merge!(PuppetDockerTools::Utilities.parse_build_args(Array(build_args)))
       end
 
+      build_args_hash = PuppetDockerTools::Utilities.filter_build_args(build_args: build_args_hash, dockerfile: "#{directory}/#{dockerfile}")
+
       # This variable is meant to be used for building the non-latest tagged build
       # If the version was set via `version` or `build_args`, use that. If not,
       # use `get_value_from_env` to parse that value from the dockerfile.
