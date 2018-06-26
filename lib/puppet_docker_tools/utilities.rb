@@ -96,11 +96,18 @@ class PuppetDockerTools
       text = File.read(file)
 
       value = text.scan(/#{Regexp.escape(namespace)}\.(.+)=(.+) \\?/).to_h[label]
+      # tracking to make sure we aren't in an infinite variable loop
+      checked_variables = []
+
       # expand out environment variables
       # This supports either label=$variable or label="$variable"
       while ! value.nil? && (value.start_with?('$') || value.start_with?('"$'))
         # if variable is quoted, get rid of leading and trailing quotes
         value.gsub!(/\A"|"\Z/, '')
+
+        fail "Looks like there's an infinite loop with '#{value}'" if checked_variables.include?(value)
+
+        checked_variables << value
         value = get_value_from_variable(value, directory: directory, dockerfile: dockerfile, dockerfile_contents: text)
       end
       # check in higher-level image if we didn't find it defined in this docker file
