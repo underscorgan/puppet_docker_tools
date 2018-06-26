@@ -238,7 +238,7 @@ class PuppetDockerTools
       # get rid of the leading $ for the variable
       variable_clone[0] = ''
 
-      dockerfile_contents[/#{variable_clone}=([$"'a-zA-Z0-9\.]+)/, 1]
+      dockerfile_contents[/#{variable_clone}=([^\s]+)/, 1]
     end
     private :get_value_from_variable
   end
