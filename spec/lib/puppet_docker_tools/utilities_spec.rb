@@ -37,6 +37,24 @@ LABEL maintainer="Puppet Release Team <release@puppet.com>" \\
       com.puppet.dockerfile="/Dockerfile"
 HERE
   }
+  let(:infinite_dockerfile_contents) { <<-HERE
+FROM ubuntu:16.04
+
+ENV PUPPET_SERVER_VERSION=$foo foo=$PUPPET_SERVER_VERSION
+
+LABEL maintainer="Puppet Release Team <release@puppet.com>" \\
+      org.label-schema.vendor="Puppet" \\
+      org.label-schema.url="https://github.com/puppetlabs/puppet-in-docker" \\
+      org.label-schema.name="Puppet Server (No PuppetDB)" \\
+      org.label-schema.license="Apache-2.0" \\
+      org.label-schema.version="$PUPPET_SERVER_VERSION" \\
+      org.label-schema.vcs-url="https://github.com/puppetlabs/puppet-in-docker" \\
+      org.label-schema.vcs-ref="b75674e1fbf52f7821f7900ab22a19f1a10cafdb" \\
+      org.label-schema.build-date="2018-05-09T20:11:01Z" \\
+      org.label-schema.schema-version="1.0" \\
+      com.puppet.dockerfile="/Dockerfile"
+HERE
+  }
   let(:dockerfile_with_args) { <<-HERE
 FROM puppet/puppetserver-standalone:5.3.1
 
@@ -127,6 +145,12 @@ HERE
       allow(File).to receive(:exist?).with("/tmp/test-dir/../puppetserver-standalone/#{dockerfile}").and_return(true)
       allow(File).to receive(:read).with("/tmp/test-dir/../puppetserver-standalone/#{dockerfile}").and_return(base_dockerfile_contents)
       expect(PuppetDockerTools::Utilities.get_value_from_env('version', namespace: 'org.label-schema', directory: '/tmp/test-dir')).to eq('5.3.1')
+    end
+
+    it "doesn't get stuck in an infinite loop if there's a bad variable definition" do
+      allow(File).to receive(:exist?).with("/tmp/test-dir/#{dockerfile}").and_return(true)
+      allow(File).to receive(:read).with("/tmp/test-dir/#{dockerfile}").and_return(infinite_dockerfile_contents)
+      expect { PuppetDockerTools::Utilities.get_value_from_env('version', namespace: 'org.label-schema', directory: '/tmp/test-dir')}.to raise_error(RuntimeError, /infinite loop/)
     end
   end
 
