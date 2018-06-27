@@ -5,6 +5,18 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 This changelog adheres to [Keep a CHANGELOG](http://keepachangelog.com/).
 
 ## [Unreleased]
+## [0.1.4] - released 2018-06-27
+### Added
+- (CPR-598) Add the ability to filter buildargs at runtime. Older versions of
+  docker will fail a build if there are buildargs passed that aren't in the
+  dockerfile, so only pass in buildargs that align with the ARGs in the
+  dockerfile. A message is printed for ignored buildargs
+- (CPR-590) Add `--no-latest` option to not build a `latest` tag along with the
+  versioned tag. This is useful if you're building containers from multiple
+  version streams
+- Improve `get_value_from_env` to support retrieving values from variables set
+  to other variables
+
 ## [0.1.3] - released 2018-06-21
 ### Added
 - (CPR-584) Add support for passing version and arbitrary buildargs at container
@@ -38,7 +50,8 @@ This changelog adheres to [Keep a CHANGELOG](http://keepachangelog.com/).
 ### Added
 - Initial port of the automation from [puppet-in-docker](https://github.com/puppetlabs/puppet-in-docker)
 
-[Unreleased]: https://github.com/puppetlabs/puppet_docker_tools/compare/0.1.3...HEAD
+[Unreleased]: https://github.com/puppetlabs/puppet_docker_tools/compare/0.1.4...HEAD
+[0.1.4]: https://github.com/puppetlabs/puppet_docker_tools/compare/0.1.3...0.1.4
 [0.1.3]: https://github.com/puppetlabs/puppet_docker_tools/compare/0.1.2...0.1.3
 [0.1.2]: https://github.com/puppetlabs/puppet_docker_tools/compare/0.1.1...0.1.2
 [0.1.1]: https://github.com/puppetlabs/puppet_docker_tools/compare/0.1.0...0.1.1
