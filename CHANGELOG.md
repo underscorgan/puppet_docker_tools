@@ -5,7 +5,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 This changelog adheres to [Keep a CHANGELOG](http://keepachangelog.com/).
 
 ## [Unreleased]
-## [0.1.4] - released 2018-06-26
+## [0.1.4] - released 2018-06-27
 ### Added
 - (CPR-598) Add the ability to filter buildargs at runtime. Older versions of
   docker will fail a build if there are buildargs passed that aren't in the
