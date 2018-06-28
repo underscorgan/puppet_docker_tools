@@ -33,7 +33,7 @@ Arguments:
   TAG        Pull latest versions of images at TAG. Defaults to ['ubuntu:16.04', 'centos:7', 'alpine:3.4', 'debian:9', 'postgres:9.6.8']
 
 Options:
-  --repository=<repo>        Dockerhub repository containing the image [default: puppet]
+  --repository=<repo>        Docker repository containing the image [default: puppet]
   --no-cache                 Disable use of layer cache when building this image. Defaults to using the cache.
   --namespace=<namespace>    Namespace for labels on the container [default: org.label-schema]
   --dockerfile=<dockerfile>  File name for your dockerfile [default: Dockerfile]
@@ -66,7 +66,7 @@ Pull the specified image, i.e. 'puppet/puppetserver'. *NOTE*: If you don't inclu
 
 ### `puppet-docker push`
 
-Push images built from the dockerfile in DIRECTORY to hub.docker.com. This task will fail if you do not have a version specified in your dockerfile. It will push both a versioned and a 'latest' tagged image.
+Push images built from the dockerfile in DIRECTORY to <repo>. This task will fail if you do not have a version specified in your dockerfile. It will push both a versioned and a 'latest' tagged image.
 
 ### `puppet-docker rev-labels`
 
