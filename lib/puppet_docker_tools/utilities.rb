@@ -5,14 +5,16 @@ class PuppetDockerTools
   module Utilities
     module_function
 
-    # Push an image to hub.docker.com
+    # Push an image to a docker repository
     #
     # @param image_name The image to push, including the tag e.g., puppet/puppetserver:latest
+    #        If pushing to a private repo, the image name should include the repo endpoint,
+    #        like my-docker-repo.internal.net/puppet/puppetserver:latest
     # @param stream_output Whether or not to stream output as it comes in, defaults to true
     # @return Returns an array containing the integer exitstatus of the push
     #         command and a string containing the combined stdout and stderr
     #         from the push
-    def push_to_dockerhub(image_name, stream_output=true)
+    def push_to_docker_repo(image_name, stream_output=true)
       Open3.popen2e("docker push #{image_name}") do |stdin, output_stream, wait_thread|
         output=''
         while line = output_stream.gets

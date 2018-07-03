@@ -147,27 +147,27 @@ describe PuppetDockerTools::Runner do
 
     it 'should raise an error if something bad happens pushing the versioned tag' do
       expect(PuppetDockerTools::Utilities).to receive(:get_value_from_label).with('test/test-image', value: 'version', namespace: runner.namespace).and_return('1.2.3')
-      expect(PuppetDockerTools::Utilities).to receive(:push_to_dockerhub).with('test/test-image:1.2.3').and_return([1, nil])
-      expect { runner.push }.to raise_error(RuntimeError, /1.2.3 to dockerhub/i)
+      expect(PuppetDockerTools::Utilities).to receive(:push_to_docker_repo).with('test/test-image:1.2.3').and_return([1, nil])
+      expect { runner.push }.to raise_error(RuntimeError, /1.2.3 failed/i)
     end
 
     it 'should raise an error if something bad happens pushing the latest tag' do
       expect(PuppetDockerTools::Utilities).to receive(:get_value_from_label).with('test/test-image', value: 'version', namespace: runner.namespace).and_return('1.2.3')
-      expect(PuppetDockerTools::Utilities).to receive(:push_to_dockerhub).with('test/test-image:1.2.3').and_return([0, nil])
-      expect(PuppetDockerTools::Utilities).to receive(:push_to_dockerhub).with('test/test-image:latest').and_return([1, nil])
-      expect { runner.push }.to raise_error(RuntimeError, /latest to dockerhub/i)
+      expect(PuppetDockerTools::Utilities).to receive(:push_to_docker_repo).with('test/test-image:1.2.3').and_return([0, nil])
+      expect(PuppetDockerTools::Utilities).to receive(:push_to_docker_repo).with('test/test-image:latest').and_return([1, nil])
+      expect { runner.push }.to raise_error(RuntimeError, /latest failed/i)
     end
 
     it 'should push the versioned and latest tags if nothing goes wrong' do
       expect(PuppetDockerTools::Utilities).to receive(:get_value_from_label).with('test/test-image', value: 'version', namespace: runner.namespace).and_return('1.2.3')
-      expect(PuppetDockerTools::Utilities).to receive(:push_to_dockerhub).with('test/test-image:1.2.3').and_return([0, nil])
-      expect(PuppetDockerTools::Utilities).to receive(:push_to_dockerhub).with('test/test-image:latest').and_return([0, nil])
+      expect(PuppetDockerTools::Utilities).to receive(:push_to_docker_repo).with('test/test-image:1.2.3').and_return([0, nil])
+      expect(PuppetDockerTools::Utilities).to receive(:push_to_docker_repo).with('test/test-image:latest').and_return([0, nil])
       runner.push
     end
 
     it 'should not push the latest tag if latest is set to false' do
       expect(PuppetDockerTools::Utilities).to receive(:get_value_from_label).with('test/test-image', value: 'version', namespace: runner.namespace).and_return('1.2.3')
-      expect(PuppetDockerTools::Utilities).to receive(:push_to_dockerhub).with('test/test-image:1.2.3').and_return([0, nil])
+      expect(PuppetDockerTools::Utilities).to receive(:push_to_docker_repo).with('test/test-image:1.2.3').and_return([0, nil])
       runner.push(latest: false)
     end
   end

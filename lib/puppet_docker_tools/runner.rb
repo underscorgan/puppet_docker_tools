@@ -114,7 +114,7 @@ class PuppetDockerTools
       fail output unless status == 0
     end
 
-    # Push an image to hub.docker.com
+    # Push an image to $repository
     #
     # @param latest Whether or not to push the latest tag along with the
     #        versioned image build.
@@ -128,17 +128,17 @@ class PuppetDockerTools
         fail "No version specified in #{dockerfile} for #{path}"
       end
 
-      puts "Pushing #{path}:#{version} to Docker Hub"
-      exitstatus, _ = PuppetDockerTools::Utilities.push_to_dockerhub("#{path}:#{version}")
+      puts "Pushing #{path}:#{version}"
+      exitstatus, _ = PuppetDockerTools::Utilities.push_to_docker_repo("#{path}:#{version}")
       unless exitstatus == 0
-        fail "Pushing #{path}:#{version} to dockerhub failed!"
+        fail "Pushing #{path}:#{version} failed!"
       end
 
       if latest
-        puts "Pushing #{path}:latest to Docker Hub"
-        exitstatus, _ = PuppetDockerTools::Utilities.push_to_dockerhub("#{path}:latest")
+        puts "Pushing #{path}:latest"
+        exitstatus, _ = PuppetDockerTools::Utilities.push_to_docker_repo("#{path}:latest")
         unless exitstatus == 0
-          fail "Pushing #{path}:latest to dockerhub failed!"
+          fail "Pushing #{path}:latest failed!"
         end
       end
     end
