@@ -170,6 +170,13 @@ describe PuppetDockerTools::Runner do
       expect(PuppetDockerTools::Utilities).to receive(:push_to_docker_repo).with('test/test-image:1.2.3').and_return([0, nil])
       runner.push(latest: false)
     end
+
+    it "shouldn't look for the version if it's passed" do
+      expect(PuppetDockerTools::Utilities).not_to receive(:get_value_from_label)
+      expect(PuppetDockerTools::Utilities).to receive(:push_to_docker_repo).with('test/test-image:4.5.6').and_return([0, nil])
+      expect(PuppetDockerTools::Utilities).to receive(:push_to_docker_repo).with('test/test-image:latest').and_return([0, nil])
+      runner.push(version: '4.5.6')
+    end
   end
 
   describe '#rev_labels' do

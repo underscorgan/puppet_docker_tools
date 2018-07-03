@@ -11,7 +11,7 @@ Usage:
   puppet-docker lint [DIRECTORY] [--dockerfile=<dockerfile>]
   puppet-docker local-lint [DIRECTORY] [--dockerfile=<dockerfile>]
   puppet-docker pull [IMAGE] [--repository=<repo>]
-  puppet-docker push [DIRECTORY] [--dockerfile=<dockerfile>] [--repository=<repo>] [--namespace=<namespace>] [--no-latest]
+  puppet-docker push [DIRECTORY] [--dockerfile=<dockerfile>] [--repository=<repo>] [--namespace=<namespace>] [--version=<version>] [--no-latest]
   puppet-docker rev-labels [DIRECTORY] [--dockerfile=<dockerfile>] [--namespace=<namespace>]
   puppet-docker spec [DIRECTORY]
   puppet-docker test [DIRECTORY] [--dockerfile=<dockerfile>]
@@ -87,7 +87,7 @@ begin
     elsif options['local-lint']
       command_runner.local_lint
     elsif options['push']
-      command_runner.push(latest: latest)
+      command_runner.push(latest: latest, version: options['--version'])
     elsif options['rev-labels']
       command_runner.rev_labels
     elsif options['spec']
