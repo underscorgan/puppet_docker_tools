@@ -5,6 +5,13 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 This changelog adheres to [Keep a CHANGELOG](http://keepachangelog.com/).
 
 ## [Unreleased]
+## [0.1.5] - released 2018-07-05
+### Added
+- Add the ability to pass `--version` to the push subcommand
+
+### Fixed
+- Documentation cleanup
+
 ## [0.1.4] - released 2018-06-27
 ### Added
 - (CPR-598) Add the ability to filter buildargs at runtime. Older versions of
@@ -50,7 +57,8 @@ This changelog adheres to [Keep a CHANGELOG](http://keepachangelog.com/).
 ### Added
 - Initial port of the automation from [puppet-in-docker](https://github.com/puppetlabs/puppet-in-docker)
 
-[Unreleased]: https://github.com/puppetlabs/puppet_docker_tools/compare/0.1.4...HEAD
+[Unreleased]: https://github.com/puppetlabs/puppet_docker_tools/compare/0.1.5...HEAD
+[0.1.5]: https://github.com/puppetlabs/puppet_docker_tools/compare/0.1.4...0.1.5
 [0.1.4]: https://github.com/puppetlabs/puppet_docker_tools/compare/0.1.3...0.1.4
 [0.1.3]: https://github.com/puppetlabs/puppet_docker_tools/compare/0.1.2...0.1.3
 [0.1.2]: https://github.com/puppetlabs/puppet_docker_tools/compare/0.1.1...0.1.2
