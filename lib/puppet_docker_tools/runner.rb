@@ -118,12 +118,16 @@ class PuppetDockerTools
     #
     # @param latest Whether or not to push the latest tag along with the
     #        versioned image build.
-    def push(latest: true)
+    def push(latest: true, version: nil)
       image_name = File.basename(directory)
       path = "#{repository}/#{image_name}"
-      version = PuppetDockerTools::Utilities.get_value_from_label(path, value: 'version', namespace: namespace)
 
-      # We always want to push a versioned label
+      # only check for version from the label if we didn't pass it in
+      if version.nil?
+        version = PuppetDockerTools::Utilities.get_value_from_label(path, value: 'version', namespace: namespace)
+      end
+
+      # We always want to push a versioned container
       unless version
         fail "No version specified in #{dockerfile} for #{path}"
       end
