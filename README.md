@@ -15,11 +15,11 @@ $ puppet-docker help
 Utilities for building and releasing Puppet docker images.
 
 Usage:
-  puppet-docker build [DIRECTORY] [--dockerfile=<dockerfile>] [--repository=<repo>] [--namespace=<namespace>] [--no-cache] [--version=<version] [--build-arg=<buildarg> ...] [--no-latest]
+  puppet-docker build [DIRECTORY] [--dockerfile=<dockerfile>] [--repository=<repo>] [--namespace=<namespace>] [--no-cache] [--version=<version>] [--build-arg=<buildarg> ...] [--no-latest]
   puppet-docker lint [DIRECTORY] [--dockerfile=<dockerfile>]
   puppet-docker local-lint [DIRECTORY] [--dockerfile=<dockerfile>]
   puppet-docker pull [IMAGE] [--repository=<repo>]
-  puppet-docker push [DIRECTORY] [--dockerfile=<dockerfile>] [--repository=<repo>] [--namespace=<namespace>] [--no-latest]
+  puppet-docker push [DIRECTORY] [--dockerfile=<dockerfile>] [--repository=<repo>] [--namespace=<namespace>] [--version=<version>] [--no-latest]
   puppet-docker rev-labels [DIRECTORY] [--dockerfile=<dockerfile>] [--namespace=<namespace>]
   puppet-docker spec [DIRECTORY]
   puppet-docker test [DIRECTORY] [--dockerfile=<dockerfile>]
@@ -40,8 +40,7 @@ Options:
   --version=<version>        Version to build. This field will be used to determine the label and will be passed as the version build arg.
                              **NOTE** `--build-arg version='<version>'` overrides `--version <version>`
   --build-arg=<buildarg>     Build arg to pass to container build, can be passed multiple times.
-  --no-latest                Do not include the 'latest' tag when building and shipping images. By default, the 'latest' tag is built and
-                             shipped with the versioned tag.
+  --no-latest                Do not include the 'latest' tag when building and shipping images. By default, the 'latest' tag is built and shipped with the versioned tag.
 ```
 
 ### `puppet-docker build`
