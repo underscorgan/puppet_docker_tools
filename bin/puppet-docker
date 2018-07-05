@@ -39,7 +39,7 @@ begin
   options = Docopt::docopt(doc)
 rescue Docopt::Exit
   puts doc
-  exit
+  exit 1
 end
 
 defaults = {
