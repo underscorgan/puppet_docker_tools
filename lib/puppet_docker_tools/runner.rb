@@ -79,6 +79,12 @@ class PuppetDockerTools
         Docker::Image.build_from_dir(directory, build_options)
       end
 
+      if ENV['DISTELLI_BUILDNUM']
+        puts "building #{path}:#{ENV['DISTELLI_BUILDNUM']}"
+        build_options['t'] = "#{path}:#{ENV['DISTELLI_BUILDNUM']}"
+        Docker::Image.build_from_dir(directory, build_options)
+      end
+
       if version
         puts "Building #{path}:#{version}"
 
@@ -143,6 +149,14 @@ class PuppetDockerTools
         exitstatus, _ = PuppetDockerTools::Utilities.push_to_docker_repo("#{path}:latest")
         unless exitstatus == 0
           fail "Pushing #{path}:latest failed!"
+        end
+      end
+
+      if ENV['DISTELLI_BUILDNUM']
+        puts "building #{path}:#{ENV['DISTELLI_BUILDNUM']}"
+        exitstatus, _ = PuppetDockerTools::Utilities.push_to_docker_repo("#{path}:#{ENV['DISTELLI_BUILDNUM']}")
+        unless exitstatus == 0
+          fail "Pushing #{path}:#{ENV['DISTELLI_BUILDNUM']} failed!"
         end
       end
     end
