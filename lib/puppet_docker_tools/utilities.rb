@@ -1,5 +1,5 @@
-require 'docker'
 require 'open3'
+require 'json'
 
 class PuppetDockerTools
   module Utilities
@@ -79,7 +79,8 @@ class PuppetDockerTools
     # @param value The value you want to get from the labels, e.g. 'version'
     # @param namespace The namespace for the value, e.g. 'org.label-schema'
     def get_value_from_label(image, value: , namespace: )
-      labels = Docker::Image.get(image).json["Config"]["Labels"]
+      output, _ = Open3.capture2("docker inspect -f \"{{json .Config.Labels }}\" #{image}")
+      labels = JSON.parse(output)
       labels["#{namespace}.#{value.tr('_', '-')}"]
     rescue
       nil
@@ -142,38 +143,20 @@ class PuppetDockerTools
     # Pull a docker image
     #
     # @param image The image to pull. If the image does not include the tag to
-    #        pull, it will pull all tags for that image
-    def pull(image)
-      if image.include?(':')
-        puts "Pulling #{image}"
-        PuppetDockerTools::Utilities.pull_single_tag(image)
-      else
-        puts "Pulling all tags for #{image}"
-        PuppetDockerTools::Utilities.pull_all_tags(image)
+    #        pull, it will pull the 'latest' tag for that image
+    def pull(image, stream_output = true)
+      Open3.popen2e("docker pull #{image}") do |stdin, output_stream, wait_thread|
+        output=''
+        while line = output_stream.gets
+          if stream_output
+            puts line
+          end
+          output += line
+        end
+        exit_status = wait_thread.value.exitstatus
+        puts output unless stream_output
+        fail unless exit_status == 0
       end
-    end
-
-    # Pull all tags for a docker image
-    #
-    # @param image The image to pull, e.g. puppet/puppetserver
-    def pull_all_tags(image)
-      Docker::Image.create('fromImage' => image)
-
-      # Filter through existing tags of that image so we can output what we pulled
-      images = Docker::Image.all('filter' => image)
-      images.each do |img|
-        timestamp = PuppetDockerTools::Utilities.format_timestamp(img.info["Created"])
-        puts "Pulled #{img.info["RepoTags"].join(', ')}, last updated #{timestamp}"
-      end
-    end
-
-    # Pull a single tag of a docker image
-    #
-    # @param tag The image/tag to pull, e.g. puppet/puppetserver:latest
-    def pull_single_tag(tag)
-      image = Docker::Image.create('fromImage' => tag)
-      timestamp = PuppetDockerTools::Utilities.format_timestamp(image.info["Created"])
-      puts "Pulled #{image.info["RepoTags"].first}, last updated #{timestamp}"
     end
 
     # Pull the specified tags
