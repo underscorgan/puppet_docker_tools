@@ -1,5 +1,4 @@
 require 'date'
-require 'docker'
 require 'json'
 require 'rspec/core'
 require 'time'
@@ -31,7 +30,7 @@ class PuppetDockerTools
     #        'arg=value'.
     # @param latest Whether or not to build the latest tag along with the
     #        versioned image build.
-    def build(no_cache: false, version: nil, build_args: [], latest: true)
+    def build(no_cache: false, version: nil, build_args: [], latest: true, stream_output: true)
       image_name = File.basename(directory)
       build_args_hash = {
         'vcs_ref' => PuppetDockerTools::Utilities.current_git_sha(directory),
@@ -63,27 +62,44 @@ class PuppetDockerTools
 
       path = "#{repository}/#{image_name}"
 
-      build_options = {'dockerfile' => dockerfile, 'buildargs' => "#{build_args_hash.to_json}"}
-
+      build_options = ''
       if no_cache
         puts "Ignoring cache for #{path}"
-        build_options['nocache'] = true
+        build_options = "--no-cache"
       end
 
+      if dockerfile != "Dockerfile"
+        build_options << " --file #{dockerfile}"
+      end
+
+      tags = []
       if latest
-        puts "Building #{path}:latest"
-
-        # 't' in the build_options sets the tag for the image we're building
-        build_options['t'] = "#{path}:latest"
-
-        Docker::Image.build_from_dir(directory, build_options)
+        tags << "#{path}:latest"
       end
 
       if version
-        puts "Building #{path}:#{version}"
+        tags << "#{path}:#{version}"
+      end
 
-        build_options['t'] = "#{path}:#{version}"
-        Docker::Image.build_from_dir(directory, build_options)
+      if tags.empty?
+        return nil
+      end
+
+      build_args_string = "--build-arg " + build_args_hash.map{ |k,v| "#{k}=#{v}" }.join(" --build-arg ")
+      tags_string = "--tag " + tags.join(" --tag ")
+
+      docker_command = "docker build #{build_args_string} #{build_options} #{tags_string} #{directory}".squeeze(' ')
+      Open3.popen2e(docker_command) do |stdin, output_stream, wait_thread|
+        output=''
+        while line = output_stream.gets
+          if stream_output
+            puts line
+          end
+          output += line
+        end
+        exit_status = wait_thread.value.exitstatus
+        puts output unless stream_output
+        fail unless exit_status == 0
       end
     end
 
@@ -96,15 +112,8 @@ class PuppetDockerTools
 
       # make sure we have the container locally
       PuppetDockerTools::Utilities.pull("#{hadolint_container}:latest")
-      container = Docker::Container.create('Cmd' => ['/bin/sh', '-c', "#{PuppetDockerTools::Utilities.get_hadolint_command}"], 'Image' => hadolint_container, 'OpenStdin' => true, 'StdinOnce' => true)
-      # This container.tap startes the container created above, and passes directory/Dockerfile to the container
-      container.tap(&:start).attach(stdin: "#{directory}/#{dockerfile}")
-      # Wait for the run to finish
-      container.wait
-      exit_status = container.json['State']['ExitCode']
-      unless exit_status == 0
-        fail container.logs(stdout: true, stderr: true)
-      end
+      output, status = Open3.capture2e("docker run --rm -i hadolint/hadolint hadolint --ignore DL3008 --ignore DL3018 --ignore DL4000 --ignore DL4001 - < #{directory}/#{dockerfile}")
+      fail output unless status == 0
     end
 
     # Run hadolint Dockerfile linting using a local hadolint executable. Executable
