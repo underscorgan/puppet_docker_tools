@@ -15,7 +15,7 @@ class PuppetDockerTools
       @namespace = namespace
       @dockerfile = dockerfile
 
-      file = "#{directory}/#{dockerfile}"
+      file = File.join(directory, dockerfile)
       fail "File #{file} doesn't exist!" unless File.exist? file
     end
 
@@ -48,7 +48,7 @@ class PuppetDockerTools
         build_args_hash.merge!(PuppetDockerTools::Utilities.parse_build_args(Array(build_args)))
       end
 
-      build_args_hash = PuppetDockerTools::Utilities.filter_build_args(build_args: build_args_hash, dockerfile: "#{directory}/#{dockerfile}")
+      build_args_hash = PuppetDockerTools::Utilities.filter_build_args(build_args: build_args_hash, dockerfile: File.join(directory, dockerfile))
 
       # This variable is meant to be used for building the non-latest tagged build
       # If the version was set via `version` or `build_args`, use that. If not,
@@ -60,36 +60,40 @@ class PuppetDockerTools
       # and versions passed in to the dockerfile with an `ARG`
       version = build_args_hash['version'] || PuppetDockerTools::Utilities.get_value_from_env('version', namespace: namespace, directory: directory, dockerfile: dockerfile)
 
-      path = "#{repository}/#{image_name}"
+      path = File.join(repository, image_name)
 
-      build_options = ''
+      build_options = []
       if no_cache
         puts "Ignoring cache for #{path}"
-        build_options = "--no-cache"
+        build_options << '--no-cache'
       end
 
       if dockerfile != "Dockerfile"
-        build_options << " --file #{dockerfile}"
+        build_options << ['--file', dockerfile]
       end
 
       tags = []
       if latest
-        tags << "#{path}:latest"
+        tags << ['--tag', "#{path}:latest"]
       end
 
       if version
-        tags << "#{path}:#{version}"
+        tags << ['--tag', "#{path}:#{version}"]
       end
 
       if tags.empty?
         return nil
       end
 
-      build_args_string = "--build-arg " + build_args_hash.map{ |k,v| "#{k}=#{v}" }.join(" --build-arg ")
-      tags_string = "--tag " + tags.join(" --tag ")
 
-      docker_command = "docker build #{build_args_string} #{build_options} #{tags_string} #{directory}".squeeze(' ')
-      Open3.popen2e(docker_command) do |stdin, output_stream, wait_thread|
+      build_args = []
+      build_args_hash.map{ |k,v| "#{k}=#{v}" }.each do |val|
+        build_args << ['--build-arg', val]
+      end
+
+      build_command = ['docker', 'build', build_args, build_options, tags, directory].flatten
+
+      Open3.popen2e(*build_command) do |stdin, output_stream, wait_thread|
         output=''
         output_stream.each_line do |line|
           stream_output ? (puts line) : (output += line)
@@ -109,14 +113,15 @@ class PuppetDockerTools
 
       # make sure we have the container locally
       PuppetDockerTools::Utilities.pull("#{hadolint_container}:latest")
-      output, status = Open3.capture2e("docker run --rm -i hadolint/hadolint hadolint --ignore DL3008 --ignore DL3018 --ignore DL4000 --ignore DL4001 - < #{directory}/#{dockerfile}")
+      docker_run = ['docker', 'run', '--rm', '-v', "#{File.join(Dir.pwd, directory, dockerfile)}:/Dockerfile:ro", '-i', 'hadolint/hadolint', PuppetDockerTools::Utilities.get_hadolint_command('Dockerfile')].flatten
+      output, status = Open3.capture2e(*docker_run)
       fail output unless status == 0
     end
 
     # Run hadolint Dockerfile linting using a local hadolint executable. Executable
     # found based on your path.
     def local_lint
-      output, status = Open3.capture2e(PuppetDockerTools::Utilities.get_hadolint_command("#{directory}/#{dockerfile}"))
+      output, status = Open3.capture2e(*PuppetDockerTools::Utilities.get_hadolint_command(File.join(directory,dockerfile)))
       fail output unless status == 0
     end
 
@@ -126,7 +131,7 @@ class PuppetDockerTools
     #        versioned image build.
     def push(latest: true, version: nil)
       image_name = File.basename(directory)
-      path = "#{repository}/#{image_name}"
+      path = File.join(repository, image_name)
 
       # only check for version from the label if we didn't pass it in
       if version.nil?
@@ -176,13 +181,13 @@ class PuppetDockerTools
     # Run spec tests
     #
     def spec
-      tests = Dir.glob("#{directory}/spec/*_spec.rb")
+      tests = Dir.glob(File.join(directory,'spec','*_spec.rb'))
       test_files = tests.map { |test| File.basename(test, '.rb') }
 
-      puts "Running RSpec tests from #{File.expand_path("#{directory}/spec")} (#{test_files.join ","}), this may take some time"
+      puts "Running RSpec tests from #{File.expand_path(File.join(directory,'spec'))} (#{test_files.join ","}), this may take some time"
       success = true
       tests.each do |test|
-        Open3.popen2e("rspec spec #{test}") do |stdin, output_stream, wait_thread|
+        Open3.popen2e('rspec', 'spec', test) do |stdin, output_stream, wait_thread|
           output_stream.each_line do |line|
             puts line
           end

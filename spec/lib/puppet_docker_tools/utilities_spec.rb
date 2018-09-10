@@ -203,18 +203,18 @@ HERE
 
   describe '#pull' do
     it 'will pull a single image if the image has a tag' do
-      expect(Open3).to receive(:popen2e).with('docker pull test/test-dir:latest')
+      expect(Open3).to receive(:popen2e).with('docker', 'pull', 'test/test-dir:latest')
       PuppetDockerTools::Utilities.pull('test/test-dir:latest')
     end
   end
 
   describe '#get_hadolint_command' do
     it 'generates a commmand with a dockerfile' do
-      expect(PuppetDockerTools::Utilities.get_hadolint_command('test/Dockerfile')).to eq('hadolint --ignore DL3008 --ignore DL3018 --ignore DL4000 --ignore DL4001 test/Dockerfile')
+      expect(PuppetDockerTools::Utilities.get_hadolint_command('test/Dockerfile')).to eq(['hadolint', '--ignore', 'DL3008', '--ignore', 'DL3018', '--ignore', 'DL4000', '--ignore', 'DL4001', 'test/Dockerfile'])
     end
 
     it 'defaults to generating a command that reads from stdin' do
-      expect(PuppetDockerTools::Utilities.get_hadolint_command).to eq('hadolint --ignore DL3008 --ignore DL3018 --ignore DL4000 --ignore DL4001 -')
+      expect(PuppetDockerTools::Utilities.get_hadolint_command).to eq(['hadolint', '--ignore', 'DL3008', '--ignore', 'DL3018', '--ignore', 'DL4000', '--ignore', 'DL4001', '-'])
     end
   end
 

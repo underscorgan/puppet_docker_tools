@@ -15,7 +15,7 @@ class PuppetDockerTools
     #         command and a string containing the combined stdout and stderr
     #         from the push
     def push_to_docker_repo(image_name, stream_output=true)
-      Open3.popen2e("docker push #{image_name}") do |stdin, output_stream, wait_thread|
+      Open3.popen2e('docker', 'push', "#{image_name}") do |stdin, output_stream, wait_thread|
         output=''
         output_stream.each_line do |line|
             stream_output ? (puts line) : (output += line)
@@ -76,7 +76,7 @@ class PuppetDockerTools
     # @param value The value you want to get from the labels, e.g. 'version'
     # @param namespace The namespace for the value, e.g. 'org.label-schema'
     def get_value_from_label(image, value: , namespace: )
-      output, _ = Open3.capture2("docker inspect -f \"{{json .Config.Labels }}\" #{image}")
+      output, _ = Open3.capture2('docker', 'inspect', '-f', '"{{json .Config.Labels }}"', "#{image}")
       labels = JSON.parse(output)
       labels["#{namespace}.#{value.tr('_', '-')}"]
     rescue
@@ -142,7 +142,7 @@ class PuppetDockerTools
     # @param image The image to pull. If the image does not include the tag to
     #        pull, it will pull the 'latest' tag for that image
     def pull(image, stream_output = true)
-      Open3.popen2e("docker pull #{image}") do |stdin, output_stream, wait_thread|
+      Open3.popen2e('docker', 'pull', "#{image}") do |stdin, output_stream, wait_thread|
         output=''
         output_stream.each_line do |line|
             stream_output ? (puts line) : (output += line)
@@ -174,9 +174,12 @@ class PuppetDockerTools
         'DL4000',
         'DL4001',
       ]
-      ignore_string = ignore_rules.map { |x| "--ignore #{x}" }.join(' ')
-
-      "hadolint #{ignore_string} #{file}"
+      hadolint_command = ['hadolint']
+      ignore_rules.each do |rule|
+        hadolint_command << ['--ignore', rule]
+      end
+      hadolint_command << file
+      hadolint_command.flatten
     end
 
     # Get a value from a Dockerfile
