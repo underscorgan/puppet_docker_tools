@@ -91,11 +91,8 @@ class PuppetDockerTools
       docker_command = "docker build #{build_args_string} #{build_options} #{tags_string} #{directory}".squeeze(' ')
       Open3.popen2e(docker_command) do |stdin, output_stream, wait_thread|
         output=''
-        while line = output_stream.gets
-          if stream_output
-            puts line
-          end
-          output += line
+        output_stream.each_line do |line|
+          stream_output ? (puts line) : (output += line)
         end
         exit_status = wait_thread.value.exitstatus
         puts output unless stream_output
@@ -186,7 +183,7 @@ class PuppetDockerTools
       success = true
       tests.each do |test|
         Open3.popen2e("rspec spec #{test}") do |stdin, output_stream, wait_thread|
-          while line = output_stream.gets
+          output_stream.each_line do |line|
             puts line
           end
           exit_status = wait_thread.value.exitstatus

@@ -17,11 +17,8 @@ class PuppetDockerTools
     def push_to_docker_repo(image_name, stream_output=true)
       Open3.popen2e("docker push #{image_name}") do |stdin, output_stream, wait_thread|
         output=''
-        while line = output_stream.gets
-          if stream_output
-            puts line
-          end
-          output += line
+        output_stream.each_line do |line|
+            stream_output ? (puts line) : (output += line)
         end
         exit_status = wait_thread.value.exitstatus
         return exit_status, output
@@ -147,11 +144,8 @@ class PuppetDockerTools
     def pull(image, stream_output = true)
       Open3.popen2e("docker pull #{image}") do |stdin, output_stream, wait_thread|
         output=''
-        while line = output_stream.gets
-          if stream_output
-            puts line
-          end
-          output += line
+        output_stream.each_line do |line|
+            stream_output ? (puts line) : (output += line)
         end
         exit_status = wait_thread.value.exitstatus
         puts output unless stream_output
