@@ -82,7 +82,19 @@ HERE
   }
 
   let(:labels) {
-    '{ "org.label-schema.build-date":"2018-08-24T21:31:54Z","org.label-schema.dockerfile":"/Dockerfile","org.label-schema.license":"Apache-2.0","org.label-schema.maintainer":"Puppet Release Team <release@puppet.com>","org.label-schema.name":"Puppet Server","org.label-schema.schema-version":"1.0","org.label-schema.url":"https://github.com/puppetlabs/puppetserver","org.label-schema.vcs-ref":"5296a6a86b141c9c1aeab63258205ae664d4108d","org.label-schema.vcs-url":"https://github.com/puppetlabs/puppetserver","org.label-schema.vendor":"Puppet","org.label-schema.version":"5.3.5" }'
+    '{
+      "org.label-schema.build-date":"2018-08-24T21:31:54Z",
+      "org.label-schema.dockerfile":"/Dockerfile",
+      "org.label-schema.license":"Apache-2.0",
+      "org.label-schema.maintainer":"Puppet Release Team <release@puppet.com>",
+      "org.label-schema.name":"Puppet Server",
+      "org.label-schema.schema-version":"1.0",
+      "org.label-schema.url":"https://github.com/puppetlabs/puppetserver",
+      "org.label-schema.vcs-ref":"5296a6a86b141c9c1aeab63258205ae664d4108d",
+      "org.label-schema.vcs-url":"https://github.com/puppetlabs/puppetserver",
+      "org.label-schema.vendor":"Puppet",
+      "org.label-schema.version":"5.3.5"
+    }'
   }
 
   describe "#filter_build_args" do
