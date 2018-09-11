@@ -1,11 +1,9 @@
 shared_context 'with a docker container' do
   before(:all) do
-    @container = Docker::Container.create('Image' => @image.id)
-    @container.start
+    @container = %x(docker run --detach --rm -i #{@image}).chomp
   end
 
   after(:all) do
-    @container.kill
-    @container.delete(force: true)
+    %x(docker container kill #{@container})
   end
 end
