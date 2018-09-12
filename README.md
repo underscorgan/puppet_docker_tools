@@ -21,7 +21,7 @@ Usage:
   puppet-docker pull [IMAGE] [--repository=<repo>]
   puppet-docker push [DIRECTORY] [--dockerfile=<dockerfile>] [--repository=<repo>] [--namespace=<namespace>] [--version=<version>] [--no-latest]
   puppet-docker rev-labels [DIRECTORY] [--dockerfile=<dockerfile>] [--namespace=<namespace>]
-  puppet-docker spec [DIRECTORY]
+  puppet-docker spec [DIRECTORY] [--image=<image>]
   puppet-docker test [DIRECTORY] [--dockerfile=<dockerfile>]
   puppet-docker version [DIRECTORY] [--dockerfile=<dockerfile>] [--namespace=<namespace>]
   puppet-docker update-base-images [TAG]...
@@ -39,6 +39,7 @@ Options:
   --dockerfile=<dockerfile>  File name for your dockerfile [default: Dockerfile]
   --version=<version>        Version to build. This field will be used to determine the label and will be passed as the version build arg.
                              **NOTE** `--build-arg version='<version>'` overrides `--version <version>`
+  --image=<image>            Docker image to use for spec testing
   --build-arg=<buildarg>     Build arg to pass to container build, can be passed multiple times.
   --no-latest                Do not include the 'latest' tag when building and shipping images. By default, the 'latest' tag is built and shipped with the versioned tag.
 ```

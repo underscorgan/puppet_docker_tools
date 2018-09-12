@@ -180,7 +180,12 @@ class PuppetDockerTools
 
     # Run spec tests
     #
-    def spec
+    def spec(image: nil)
+      if image
+        fail 'Oh no! You have PUPPET_TEST_DOCKER_IMAGE set! Please unset!' if ENV['PUPPET_TEST_DOCKER_IMAGE']
+        ENV['PUPPET_TEST_DOCKER_IMAGE'] = image
+      end
+
       tests = Dir.glob(File.join(directory,'spec','*_spec.rb'))
       test_files = tests.map { |test| File.basename(test, '.rb') }
 
@@ -194,6 +199,10 @@ class PuppetDockerTools
           exit_status = wait_thread.value.exitstatus
           success = success && (exit_status == 0)
         end
+      end
+
+      if image
+        ENV['PUPPET_TEST_DOCKER_IMAGE'] = nil
       end
 
       fail "Running RSpec tests for #{directory} failed!" unless success
