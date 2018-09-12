@@ -1,6 +1,6 @@
 require 'puppet_docker_tools'
 require 'puppet_docker_tools/runner'
-require 'docker'
+require 'tmpdir'
 
 describe PuppetDockerTools::Runner do
   def create_runner(directory:, repository:, namespace:, dockerfile:)
@@ -32,55 +32,50 @@ describe PuppetDockerTools::Runner do
   end
 
   describe '#build' do
-    let(:image) { double(Docker::Image) }
-
     it 'builds a latest and version tag if version is found' do
       expect(File).to receive(:read).with("#{runner.directory}/#{runner.dockerfile}").and_return(read_dockerfile)
       expect(PuppetDockerTools::Utilities).to receive(:get_value_from_env).with('version', namespace: runner.namespace, directory: runner.directory, dockerfile: runner.dockerfile).and_return('1.2.3')
-      expect(Docker::Image).to receive(:build_from_dir).with(runner.directory, { 't' => 'test/test-image:1.2.3', 'dockerfile' => runner.dockerfile, 'buildargs' => buildargs }).and_return(image)
-      expect(Docker::Image).to receive(:build_from_dir).with(runner.directory, { 't' => 'test/test-image:latest', 'dockerfile' => runner.dockerfile, 'buildargs' => buildargs }).and_return(image)
+      expect(Open3).to receive(:popen2e).with('docker', 'build', '--build-arg', 'vcs_ref=b0c5ead01b6cabdb3f01871bce699be165c3288f', '--build-arg', 'build_date=2018-06-08T17:18:13Z', '--tag', 'test/test-image:latest', '--tag', 'test/test-image:1.2.3', runner.directory)
       runner.build
     end
 
     it 'builds just a latest tag if no version is found' do
       expect(File).to receive(:read).with("#{runner.directory}/#{runner.dockerfile}").and_return(read_dockerfile)
       expect(PuppetDockerTools::Utilities).to receive(:get_value_from_env).with('version', namespace: runner.namespace, directory: runner.directory, dockerfile: runner.dockerfile).and_return(nil)
-      expect(Docker::Image).to receive(:build_from_dir).with(runner.directory, { 't' => 'test/test-image:latest', 'dockerfile' => runner.dockerfile, 'buildargs' => buildargs }).and_return(image)
+      expect(Open3).to receive(:popen2e).with('docker', 'build', '--build-arg', 'vcs_ref=b0c5ead01b6cabdb3f01871bce699be165c3288f', '--build-arg', 'build_date=2018-06-08T17:18:13Z', '--tag', 'test/test-image:latest', runner.directory)
       runner.build
     end
 
     it 'does not build a latest tag if latest is set to false' do
       expect(File).to receive(:read).with("#{runner.directory}/#{runner.dockerfile}").and_return(read_dockerfile)
       expect(PuppetDockerTools::Utilities).to receive(:get_value_from_env).with('version', namespace: runner.namespace, directory: runner.directory, dockerfile: runner.dockerfile).and_return('1.2.3')
-      expect(Docker::Image).to receive(:build_from_dir).with(runner.directory, { 't' => 'test/test-image:1.2.3', 'dockerfile' => runner.dockerfile, 'buildargs' => buildargs }).and_return(image)
+      expect(Open3).to receive(:popen2e).with('docker', 'build', '--build-arg', 'vcs_ref=b0c5ead01b6cabdb3f01871bce699be165c3288f', '--build-arg', 'build_date=2018-06-08T17:18:13Z', '--tag', 'test/test-image:1.2.3', runner.directory)
       runner.build(latest: false)
     end
 
     it 'ignores the cache when that parameter is set' do
       expect(File).to receive(:read).with("#{runner.directory}/#{runner.dockerfile}").and_return(read_dockerfile)
       expect(PuppetDockerTools::Utilities).to receive(:get_value_from_env).with('version', namespace: runner.namespace, directory: runner.directory, dockerfile: runner.dockerfile).and_return(nil)
-      expect(Docker::Image).to receive(:build_from_dir).with(runner.directory, { 't' => 'test/test-image:latest', 'nocache' => true, 'dockerfile' => runner.dockerfile, 'buildargs' => buildargs }).and_return(image)
+      expect(Open3).to receive(:popen2e).with('docker', 'build', '--build-arg', 'vcs_ref=b0c5ead01b6cabdb3f01871bce699be165c3288f', '--build-arg', 'build_date=2018-06-08T17:18:13Z', '--no-cache', '--tag', 'test/test-image:latest', runner.directory)
       runner.build(no_cache: true)
     end
 
     it 'passes the version when that parameter is set' do
       expect(File).to receive(:read).with("#{runner.directory}/#{runner.dockerfile}").and_return(read_dockerfile_with_version)
-      expect(Docker::Image).to receive(:build_from_dir).with(runner.directory, { 't' => 'test/test-image:latest', 'dockerfile' => runner.dockerfile, 'buildargs' => buildargs_with_version }).and_return(image)
-      expect(Docker::Image).to receive(:build_from_dir).with(runner.directory, { 't' => 'test/test-image:1.2.3', 'dockerfile' => runner.dockerfile, 'buildargs' => buildargs_with_version }).and_return(image)
+      expect(Open3).to receive(:popen2e).with('docker', 'build', '--build-arg', 'vcs_ref=b0c5ead01b6cabdb3f01871bce699be165c3288f', '--build-arg', 'build_date=2018-06-08T17:18:13Z', '--build-arg', 'version=1.2.3', '--tag', 'test/test-image:latest', '--tag', 'test/test-image:1.2.3', runner.directory)
       runner.build(version: '1.2.3')
     end
 
     it 'passes arbitrary build args' do
       expect(File).to receive(:read).with("#{runner.directory}/#{runner.dockerfile}").and_return(read_dockerfile_with_arbitrary_args)
       expect(PuppetDockerTools::Utilities).to receive(:get_value_from_env).with('version', namespace: runner.namespace, directory: runner.directory, dockerfile: runner.dockerfile).and_return(nil)
-      expect(Docker::Image).to receive(:build_from_dir).with(runner.directory, { 't' => 'test/test-image:latest', 'dockerfile' => runner.dockerfile, 'buildargs' => extra_buildargs }).and_return(image)
+      expect(Open3).to receive(:popen2e).with('docker', 'build', '--build-arg', 'vcs_ref=b0c5ead01b6cabdb3f01871bce699be165c3288f', '--build-arg', 'build_date=2018-06-08T17:18:13Z', '--build-arg', 'foo=bar', '--build-arg', 'baz=test=with=equals', '--tag', 'test/test-image:latest', runner.directory)
       runner.build(build_args: ['foo=bar', 'baz=test=with=equals'])
     end
 
     it 'prioritizes version as a build arg over regular version' do
       expect(File).to receive(:read).with("#{runner.directory}/#{runner.dockerfile}").and_return(read_dockerfile_with_version)
-      expect(Docker::Image).to receive(:build_from_dir).with(runner.directory, { 't' => 'test/test-image:latest', 'dockerfile' => runner.dockerfile, 'buildargs' => buildargs_with_version }).and_return(image)
-      expect(Docker::Image).to receive(:build_from_dir).with(runner.directory, { 't' => 'test/test-image:1.2.3', 'dockerfile' => runner.dockerfile, 'buildargs' => buildargs_with_version }).and_return(image)
+      expect(Open3).to receive(:popen2e).with('docker', 'build', '--build-arg', 'vcs_ref=b0c5ead01b6cabdb3f01871bce699be165c3288f', '--build-arg', 'build_date=2018-06-08T17:18:13Z', '--build-arg', 'version=1.2.3', '--tag', 'test/test-image:latest', '--tag', 'test/test-image:1.2.3', runner.directory)
       runner.build(version: '1.2.4', build_args: ['version=1.2.3'])
     end
 
@@ -88,53 +83,31 @@ describe PuppetDockerTools::Runner do
       allow(File).to receive(:exist?).with('/tmp/test-image/Dockerfile.test').and_return(true)
       expect(File).to receive(:read).with('/tmp/test-image/Dockerfile.test').and_return(read_dockerfile)
       expect(PuppetDockerTools::Utilities).to receive(:get_value_from_env).with('version', namespace: 'org.label-schema', directory: '/tmp/test-image', dockerfile: 'Dockerfile.test').and_return(nil)
-      expect(Docker::Image).to receive(:build_from_dir).with('/tmp/test-image', { 't' => 'test/test-image:latest', 'dockerfile' => 'Dockerfile.test', 'buildargs' => buildargs }).and_return(image)
+      expect(Open3).to receive(:popen2e).with('docker', 'build', '--build-arg', 'vcs_ref=b0c5ead01b6cabdb3f01871bce699be165c3288f', '--build-arg', 'build_date=2018-06-08T17:18:13Z', '--no-cache', '--file', 'Dockerfile.test', '--tag', 'test/test-image:latest', runner.directory)
       local_runner = create_runner(directory: '/tmp/test-image', repository: 'test', namespace: 'org.label-schema', dockerfile: 'Dockerfile.test')
-      local_runner.build
+      local_runner.build(no_cache: true)
     end
   end
 
   describe '#lint' do
-    let(:passing_exit) {
-      {
-        'State' => {
-          'ExitCode' => 0
-        }
-      }
-    }
-    let(:failing_exit) {
-      {
-        'State' => {
-          'ExitCode' => 1
-        }
-      }
-    }
-
-    let(:container) { double(Docker::Container).as_null_object }
-
     before do
-      allow(PuppetDockerTools::Utilities).to receive(:pull).and_return(double(Docker::Image))
-      allow(Docker::Container).to receive(:create).and_return(container)
-      allow(container).to receive(:tap).and_return(container)
-      allow(container).to receive(:attach)
-      allow(container).to receive(:wait)
-      allow(container).to receive(:logs).and_return('container logs')
+      allow(PuppetDockerTools::Utilities).to receive(:pull)
     end
 
     it "should lint the container" do
-      allow(container).to receive(:json).and_return(passing_exit)
+      allow(Open3).to receive(:capture2e).and_return(['', 0])
       runner.lint
     end
 
     it "should exit with exit status if something went wrong" do
-      allow(container).to receive(:json).and_return(failing_exit)
+      allow(Open3).to receive(:capture2e).and_return(['container logs', 1])
       expect { runner.lint }.to raise_error(RuntimeError, /container logs/)
     end
   end
 
   describe '#local_lint' do
     it "should fail with logs if linting fails" do
-      allow(Open3).to receive(:capture2e).with(PuppetDockerTools::Utilities.get_hadolint_command('/tmp/test-image/Dockerfile')).and_return('container logs', 1)
+      allow(Open3).to receive(:capture2e).with(*PuppetDockerTools::Utilities.get_hadolint_command('/tmp/test-image/Dockerfile')).and_return('container logs', 1)
       expect { runner.local_lint }.to raise_error(RuntimeError, /container logs/)
     end
   end
@@ -223,8 +196,8 @@ HERE
     it "runs tests under the 'spec' directory" do
       tests=["/tmp/test-image/spec/test1_spec.rb", "/tmp/test-image/spec/test2_spec.rb"]
       expect(Dir).to receive(:glob).with("/tmp/test-image/spec/*_spec.rb").and_return(tests)
-      expect(Open3).to receive(:popen2e).with('rspec spec /tmp/test-image/spec/test1_spec.rb')
-      expect(Open3).to receive(:popen2e).with('rspec spec /tmp/test-image/spec/test2_spec.rb')
+      expect(Open3).to receive(:popen2e).with('rspec', 'spec', '/tmp/test-image/spec/test1_spec.rb')
+      expect(Open3).to receive(:popen2e).with('rspec', 'spec', '/tmp/test-image/spec/test2_spec.rb')
       runner.spec
     end
   end

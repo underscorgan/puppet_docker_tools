@@ -1,5 +1,4 @@
 require 'date'
-require 'docker'
 require 'json'
 require 'rspec/core'
 require 'time'
@@ -16,7 +15,7 @@ class PuppetDockerTools
       @namespace = namespace
       @dockerfile = dockerfile
 
-      file = "#{directory}/#{dockerfile}"
+      file = File.join(directory, dockerfile)
       fail "File #{file} doesn't exist!" unless File.exist? file
     end
 
@@ -31,7 +30,7 @@ class PuppetDockerTools
     #        'arg=value'.
     # @param latest Whether or not to build the latest tag along with the
     #        versioned image build.
-    def build(no_cache: false, version: nil, build_args: [], latest: true)
+    def build(no_cache: false, version: nil, build_args: [], latest: true, stream_output: true)
       image_name = File.basename(directory)
       build_args_hash = {
         'vcs_ref' => PuppetDockerTools::Utilities.current_git_sha(directory),
@@ -49,7 +48,7 @@ class PuppetDockerTools
         build_args_hash.merge!(PuppetDockerTools::Utilities.parse_build_args(Array(build_args)))
       end
 
-      build_args_hash = PuppetDockerTools::Utilities.filter_build_args(build_args: build_args_hash, dockerfile: "#{directory}/#{dockerfile}")
+      build_args_hash = PuppetDockerTools::Utilities.filter_build_args(build_args: build_args_hash, dockerfile: File.join(directory, dockerfile))
 
       # This variable is meant to be used for building the non-latest tagged build
       # If the version was set via `version` or `build_args`, use that. If not,
@@ -61,29 +60,47 @@ class PuppetDockerTools
       # and versions passed in to the dockerfile with an `ARG`
       version = build_args_hash['version'] || PuppetDockerTools::Utilities.get_value_from_env('version', namespace: namespace, directory: directory, dockerfile: dockerfile)
 
-      path = "#{repository}/#{image_name}"
+      path = File.join(repository, image_name)
 
-      build_options = {'dockerfile' => dockerfile, 'buildargs' => "#{build_args_hash.to_json}"}
-
+      build_options = []
       if no_cache
         puts "Ignoring cache for #{path}"
-        build_options['nocache'] = true
+        build_options << '--no-cache'
       end
 
+      if dockerfile != "Dockerfile"
+        build_options << ['--file', dockerfile]
+      end
+
+      tags = []
       if latest
-        puts "Building #{path}:latest"
-
-        # 't' in the build_options sets the tag for the image we're building
-        build_options['t'] = "#{path}:latest"
-
-        Docker::Image.build_from_dir(directory, build_options)
+        tags << ['--tag', "#{path}:latest"]
       end
 
       if version
-        puts "Building #{path}:#{version}"
+        tags << ['--tag', "#{path}:#{version}"]
+      end
 
-        build_options['t'] = "#{path}:#{version}"
-        Docker::Image.build_from_dir(directory, build_options)
+      if tags.empty?
+        return nil
+      end
+
+
+      build_args = []
+      build_args_hash.map{ |k,v| "#{k}=#{v}" }.each do |val|
+        build_args << ['--build-arg', val]
+      end
+
+      build_command = ['docker', 'build', build_args, build_options, tags, directory].flatten
+
+      Open3.popen2e(*build_command) do |stdin, output_stream, wait_thread|
+        output=''
+        output_stream.each_line do |line|
+          stream_output ? (puts line) : (output += line)
+        end
+        exit_status = wait_thread.value.exitstatus
+        puts output unless stream_output
+        fail unless exit_status == 0
       end
     end
 
@@ -96,21 +113,15 @@ class PuppetDockerTools
 
       # make sure we have the container locally
       PuppetDockerTools::Utilities.pull("#{hadolint_container}:latest")
-      container = Docker::Container.create('Cmd' => ['/bin/sh', '-c', "#{PuppetDockerTools::Utilities.get_hadolint_command}"], 'Image' => hadolint_container, 'OpenStdin' => true, 'StdinOnce' => true)
-      # This container.tap startes the container created above, and passes directory/Dockerfile to the container
-      container.tap(&:start).attach(stdin: "#{directory}/#{dockerfile}")
-      # Wait for the run to finish
-      container.wait
-      exit_status = container.json['State']['ExitCode']
-      unless exit_status == 0
-        fail container.logs(stdout: true, stderr: true)
-      end
+      docker_run = ['docker', 'run', '--rm', '-v', "#{File.join(Dir.pwd, directory, dockerfile)}:/Dockerfile:ro", '-i', 'hadolint/hadolint', PuppetDockerTools::Utilities.get_hadolint_command('Dockerfile')].flatten
+      output, status = Open3.capture2e(*docker_run)
+      fail output unless status == 0
     end
 
     # Run hadolint Dockerfile linting using a local hadolint executable. Executable
     # found based on your path.
     def local_lint
-      output, status = Open3.capture2e(PuppetDockerTools::Utilities.get_hadolint_command("#{directory}/#{dockerfile}"))
+      output, status = Open3.capture2e(*PuppetDockerTools::Utilities.get_hadolint_command(File.join(directory,dockerfile)))
       fail output unless status == 0
     end
 
@@ -120,7 +131,7 @@ class PuppetDockerTools
     #        versioned image build.
     def push(latest: true, version: nil)
       image_name = File.basename(directory)
-      path = "#{repository}/#{image_name}"
+      path = File.join(repository, image_name)
 
       # only check for version from the label if we didn't pass it in
       if version.nil?
@@ -170,14 +181,14 @@ class PuppetDockerTools
     # Run spec tests
     #
     def spec
-      tests = Dir.glob("#{directory}/spec/*_spec.rb")
+      tests = Dir.glob(File.join(directory,'spec','*_spec.rb'))
       test_files = tests.map { |test| File.basename(test, '.rb') }
 
-      puts "Running RSpec tests from #{File.expand_path("#{directory}/spec")} (#{test_files.join ","}), this may take some time"
+      puts "Running RSpec tests from #{File.expand_path(File.join(directory,'spec'))} (#{test_files.join ","}), this may take some time"
       success = true
       tests.each do |test|
-        Open3.popen2e("rspec spec #{test}") do |stdin, output_stream, wait_thread|
-          while line = output_stream.gets
+        Open3.popen2e('rspec', 'spec', test) do |stdin, output_stream, wait_thread|
+          output_stream.each_line do |line|
             puts line
           end
           exit_status = wait_thread.value.exitstatus
