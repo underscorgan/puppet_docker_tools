@@ -9,7 +9,7 @@ shared_examples "a running container" do |command, exit_code, expected_output|
     it "should run #{command} with output matching #{expected_output} and exit code #{exit_code}" do
       output, status = Open3.capture2e('docker', 'exec', @container, *command)
       expect(output).to match(/#{expected_output}/)
-      expect(status).to eq(exit_code)
+      expect(status.exitstatus).to eq(exit_code)
     end
   elsif expected_output
     it "should run #{command} with output matching #{expected_output}" do
@@ -19,7 +19,7 @@ shared_examples "a running container" do |command, exit_code, expected_output|
   elsif exit_code
     it "should run #{command} with exit code #{exit_code}" do
       _, status = Open3.capture2e('docker', 'exec', @container, *command)
-      expect(status).to eq(exit_code)
+      expect(status.exitstatus).to eq(exit_code)
     end
   end
 
@@ -38,7 +38,7 @@ shared_examples "a service in a container" do |service, user, arg, pid|
         output, status = Open3.capture2e('docker', 'exec', @container, 'ps', '-f', '-u', user)
         output = output.split("\n").select { |proc| proc[/#{service}/] }.join('')
       end
-      expect(status).to eq(0)
+      expect(status.exitstatus).to eq(0)
       expect(output).to match(/#{service}/)
       expect(output).to match(/#{user}/)
       if arg
