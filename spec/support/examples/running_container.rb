@@ -23,10 +23,6 @@ shared_examples "a running container" do |command, exit_code, expected_output|
     end
   end
 
- # it "should run #{command} with exit status #{exit_status}" do
- #   _, status = Open3.capture2e('docker', 'run', '--rm', '-i', @image, command)
- #   expect(status).to eq(exit_status)
- # end
 end
 
 shared_examples "a service in a container" do |service, user, arg, pid|
