@@ -3,26 +3,27 @@ require 'open3'
 shared_context 'with a docker container' do
   def is_running?(container)
     is_running = false
-    command = ['docker', 'inspect', '-f', "'{{.State.Health.Status}}'", "#{container}"]
+    output, _ = Open3.capture2e('docker', 'inspect', '--format', "'{{ .Config.Healthcheck }}'", "#{container}")
+    output.chomp!
+    output.gsub!(/'/, '')
+
+    # no configured healthcheck
+    if output.chomp == "<nil>"
+      command = ['docker', 'inspect', '-f', "'{{.State.Status}}'", "#{container}"]
+    else
+      command = ['docker', 'inspect', '-f', "'{{.State.Health.Status}}'", "#{container}"]
+    end
+
     while ! is_running
-      output, status = Open3.capture2e(*command)
+      output, _ = Open3.capture2e(*command)
       output.chomp!
       output.gsub!(/'/, '')
 
-      # If finding State.Health.Status throws an error, we probably don't have
-      # a healthcheck, so let's fall back to State.Running
-      if status.exitstatus != 0
-        command = ['docker', 'inspect', '-f', "'{{.State.Running}}'", "#{container}"]
-      end
-
       case output
-      when "healthy", "true"
+      when 'healthy', 'running'
         return true
-      when "unhealthy"
+      when 'unhealthy', 'removing', 'paused', 'exited', 'dead'
         return false
-      else
-        _, status = Open3.capture2e('docker', 'inspect', "#{container}")
-        return false if status.exitstatus != 0
       end
 
       puts "Container is not running yet, will try again in 5 seconds..."
