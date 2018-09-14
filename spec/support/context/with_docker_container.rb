@@ -20,6 +20,9 @@ shared_context 'with a docker container' do
         return true
       when "unhealthy"
         return false
+      else
+        _, status = Open3.capture2e('docker', 'inspect', "#{container}")
+        return false if status.exitstatus != 0
       end
 
       puts "Container is not running yet, will try again in 5 seconds..."
