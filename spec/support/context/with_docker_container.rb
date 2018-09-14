@@ -15,12 +15,11 @@ shared_context 'with a docker container' do
         command = ['docker', 'inspect', '-f', "'{{.State.Running}}'", "#{container}"]
       end
 
-      if output == "healthy"
+      case output
+      when "healthy", "true"
         return true
-      elsif output == "true"
-        return true
-      elsif output == "unhealthy"
-         return false
+      when "unhealthy"
+        return false
       end
 
       puts "Container is not running yet, will try again in 5 seconds..."
