@@ -16,12 +16,8 @@ Gem::Specification.new do |gem|
   gem.required_ruby_version = '~> 2.1'
 
   #dependencies
-  # MIT licensed: https://rubygems.org/gems/docker-api
-  gem.add_runtime_dependency('docker-api', '~> 1.34')
   # MIT licensed: https://rubygems.org/gems/rspec
   gem.add_runtime_dependency('rspec', '~> 3.0')
-  # MIT licensed: https://rubygems.org/gems/serverspec
-  gem.add_runtime_dependency('serverspec', '~> 2.41')
   # MIT licensed: https://rubygems.org/gems/docopt
   gem.add_runtime_dependency('docopt', '~> 0.6')
 
