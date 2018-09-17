@@ -5,6 +5,18 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 This changelog adheres to [Keep a CHANGELOG](http://keepachangelog.com/).
 
 ## [Unreleased]
+## [0.2.0] - released 2018-09-17
+### Fixed
+- If an invalid parameter is passed, exit with a non-zero exit code.
+
+### Changed
+- In order to support building and testing on Windows hosts, we have moved away
+  from using the `docker-api` rubygem. The changes to
+  PuppetDockerTools::Utilities and PuppetDockerTools::Runner should be
+  transparent, but changes to the spec helper, shared examples, and shared
+  contexts will require test changes. For an example of converting existing
+  tests to use the new helpers, see [this commit](https://github.com/puppetlabs/puppetserver/commit/ecd9e6df90acd6f8768b0eac65a96f2910fb43e9).
+
 ## [0.1.5] - released 2018-07-05
 ### Added
 - Add the ability to pass `--version` to the push subcommand
@@ -57,7 +69,8 @@ This changelog adheres to [Keep a CHANGELOG](http://keepachangelog.com/).
 ### Added
 - Initial port of the automation from [puppet-in-docker](https://github.com/puppetlabs/puppet-in-docker)
 
-[Unreleased]: https://github.com/puppetlabs/puppet_docker_tools/compare/0.1.5...HEAD
+[Unreleased]: https://github.com/puppetlabs/puppet_docker_tools/compare/0.2.0...HEAD
+[0.2.0]: https://github.com/puppetlabs/puppet_docker_tools/compare/0.1.5...0.2.0
 [0.1.5]: https://github.com/puppetlabs/puppet_docker_tools/compare/0.1.4...0.1.5
 [0.1.4]: https://github.com/puppetlabs/puppet_docker_tools/compare/0.1.3...0.1.4
 [0.1.3]: https://github.com/puppetlabs/puppet_docker_tools/compare/0.1.2...0.1.3
