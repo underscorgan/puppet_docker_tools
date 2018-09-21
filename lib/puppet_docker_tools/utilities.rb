@@ -167,13 +167,21 @@ class PuppetDockerTools
     # For more info, see the github repo (https://github.com/hadolint/hadolint)
     #
     # @param file Dockerfile to lint, defaults to stdin
-    def get_hadolint_command(file = '-')
+    # @param additional_ignores additional rules to ignore when linting
+    def get_hadolint_command(file = '-', additional_ignores = nil)
       ignore_rules = [
         'DL3008',
         'DL3018',
         'DL4000',
         'DL4001',
       ]
+      if additional_ignores && !additional_ignores.empty?
+        ignore_rules << additional_ignores
+        ignore_rules.flatten!
+        ignore_rules.sort!
+        ignore_rules.uniq!
+      end
+
       hadolint_command = ['hadolint']
       ignore_rules.each do |rule|
         hadolint_command << ['--ignore', rule]

@@ -2,6 +2,12 @@ require 'puppet_docker_tools'
 require 'puppet_docker_tools/runner'
 require 'tmpdir'
 
+RSpec.configure do |rspec|
+  rspec.expect_with :rspec do |c|
+    c.max_formatted_output_length = 1000
+  end
+end
+
 describe PuppetDockerTools::Runner do
   def create_runner(directory:, repository:, namespace:, dockerfile:)
     allow(File).to receive(:exist?).with("#{directory}/#{dockerfile}").and_return(true)
@@ -107,7 +113,7 @@ describe PuppetDockerTools::Runner do
 
   describe '#local_lint' do
     it "should fail with logs if linting fails" do
-      allow(Open3).to receive(:capture2e).with(*PuppetDockerTools::Utilities.get_hadolint_command('/tmp/test-image/Dockerfile')).and_return('container logs', 1)
+      allow(Open3).to receive(:capture2e).with(*PuppetDockerTools::Utilities.get_hadolint_command).and_return('container logs', 1)
       expect { runner.local_lint }.to raise_error(RuntimeError, /container logs/)
     end
   end

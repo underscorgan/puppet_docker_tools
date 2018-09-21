@@ -228,6 +228,14 @@ HERE
     it 'defaults to generating a command that reads from stdin' do
       expect(PuppetDockerTools::Utilities.get_hadolint_command).to eq(['hadolint', '--ignore', 'DL3008', '--ignore', 'DL3018', '--ignore', 'DL4000', '--ignore', 'DL4001', '-'])
     end
+
+    it 'can have extra ignores' do
+      expect(PuppetDockerTools::Utilities.get_hadolint_command('test/Dockerfile', ['SC2154', 'SC2155'])).to eq(['hadolint', '--ignore', 'DL3008', '--ignore', 'DL3018', '--ignore', 'DL4000', '--ignore', 'DL4001', '--ignore', 'SC2154', '--ignore', 'SC2155', 'test/Dockerfile'])
+    end
+
+    it 'dedupes' do
+      expect(PuppetDockerTools::Utilities.get_hadolint_command('test/Dockerfile', ['SC2154', 'DL3008', 'DL4000'])).to eq(['hadolint', '--ignore', 'DL3008', '--ignore', 'DL3018', '--ignore', 'DL4000', '--ignore', 'DL4001', '--ignore', 'SC2154', 'test/Dockerfile'])
+    end
   end
 
   describe '#parse_build_args' do

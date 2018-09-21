@@ -108,20 +108,20 @@ class PuppetDockerTools
     # hadolint inside of a container. To run a locally-installed hadolint binary
     # see local_lint.
     #
-    def lint
+    def lint(rules_to_ignore = nil)
       hadolint_container = 'hadolint/hadolint'
 
       # make sure we have the container locally
       PuppetDockerTools::Utilities.pull("#{hadolint_container}:latest")
-      docker_run = ['docker', 'run', '--rm', '-v', "#{File.join(Dir.pwd, directory, dockerfile)}:/Dockerfile:ro", '-i', 'hadolint/hadolint', PuppetDockerTools::Utilities.get_hadolint_command('Dockerfile')].flatten
+      docker_run = ['docker', 'run', '--rm', '-v', "#{File.join(Dir.pwd, directory, dockerfile)}:/Dockerfile:ro", '-i', 'hadolint/hadolint', PuppetDockerTools::Utilities.get_hadolint_command('Dockerfile', rules_to_ignore)].flatten
       output, status = Open3.capture2e(*docker_run)
       fail output unless status == 0
     end
 
     # Run hadolint Dockerfile linting using a local hadolint executable. Executable
     # found based on your path.
-    def local_lint
-      output, status = Open3.capture2e(*PuppetDockerTools::Utilities.get_hadolint_command(File.join(directory,dockerfile)))
+    def local_lint(rules_to_ignore = nil)
+      output, status = Open3.capture2e(*PuppetDockerTools::Utilities.get_hadolint_command(File.join(directory,dockerfile), rules_to_ignore))
       fail output unless status == 0
     end
 
