@@ -38,8 +38,13 @@ shared_context 'with a docker container' do
   before(:all) do
     @container = %x(docker run #{docker_run_options} --detach --rm -i #{@image}).chomp
 
+    unless $? == 0
+      fail "something went wrong with container startup!\n#{output}"
+    end
+
     unless is_running?(@container)
-      fail "something went wrong with container startup!"
+      logs = %x(docker container logs #{@container})
+      fail "something went wrong with container startup!\n#{logs}"
     end
   end
 
