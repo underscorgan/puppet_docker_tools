@@ -31,8 +31,13 @@ shared_context 'with a docker container' do
     end
   end
 
+  def docker_run_options
+    return ''
+  end
+
   before(:all) do
-    @container = %x(docker run --detach --rm -i #{@image}).chomp
+    @container = %x(docker run #{docker_run_options} --detach --rm -i #{@image}).chomp
+
     unless is_running?(@container)
       fail "something went wrong with container startup!"
     end
